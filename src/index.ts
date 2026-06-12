@@ -1,4 +1,5 @@
 import express from "express";
+import { userRoutes } from "./controllers/user.route";
 import fs from "fs";
 import { prisma } from "./lib/prisma";
 import dotenv from "dotenv";
@@ -14,20 +15,33 @@ if (PORT === undefined) {
 
 app.listen(PORT, () => {
   console.log(`✅ TODO server running at http://localhost:${PORT}`);
-  main()
+
 });
+app.use("/users", userRoutes);
 
-async function main() {
-  // Create a new user with a post
-  const user = await prisma.user.create({
-    data: {
-      firstName: "June",
-      lastName: "Stella",
-      email: "june@gmail.com",
-      password: "june123",
-    }
-  });
-  console.log(user);
 
-}
+// async function main() {
+//   try {
+//     // Create a new user with a post
+//     const user = await prisma.user.create({
+//       data: {
+//         firstName: "Rain",
+//         lastName: "June",
+//         email: "rain@gmail.com",
+//         password: "rain123",
+//       }
+//     });
+//     console.log(user);
+
+//   } catch (error: unknown) {
+//     if (error instanceof Error) {
+//       console.error("Prisma Error:", error.message);
+//     }
+//     else {
+//       console.error("An Unexpected error occurred", error);
+//     }
+//   }
+
+
+// }
 
