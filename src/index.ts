@@ -14,7 +14,7 @@ if (PORT === undefined) {
 }
 
 app.listen(PORT, () => {
-  console.log(`✅ TODO server running at http://localhost:${PORT}`);
+  console.log(`✅ Express server running at http://localhost:${PORT}`);
 
 });
 app.use("/users", userRoutes);
