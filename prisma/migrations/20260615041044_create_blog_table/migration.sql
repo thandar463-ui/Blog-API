@@ -15,7 +15,7 @@ CREATE TABLE "blogs" (
     "excerpt" TEXT NOT NULL,
     "coverImage" TEXT,
     "status" "BlogStatus" NOT NULL DEFAULT 'DRAFT',
-    "published" TIMESTAMP(3),
+    "publishedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deletedAt" TIMESTAMP(3),

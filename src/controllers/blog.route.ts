@@ -4,8 +4,8 @@ import { authMiddleware } from "../middlewares/auth.middleware";
 
 const router = Router();
 
-console.log("authMiddleware =", authMiddleware);
-console.log("createBlog =", blogController.createBlog);
+
 router.post("/create", authMiddleware, blogController.createBlog);
+router.patch("/publish/:id", authMiddleware, blogController.publishBlog);
 
 export { router as blogRoutes };

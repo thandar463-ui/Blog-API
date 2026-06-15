@@ -23,3 +23,28 @@ export async function createBlog(req: AuthenticatedRequest, res: Response, next:
         next(err);
     }
 }
+
+export async function publishBlog(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized", });
+        }
+
+        const blogId = req.params.id;
+
+        if (!blogId) {
+            return res.status(400).json({
+                message: "Blog id is required",
+            });
+        }
+
+        const blog = await blogService.publishBlog(blogId as string, req.user.id);
+        return res.status(200).json({
+            message:
+                "Blog published successfully",
+            data: blog,
+        });
+    } catch (err) {
+        next(err);
+    }
+}
