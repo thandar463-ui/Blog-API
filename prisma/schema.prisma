@@ -42,6 +42,5 @@ model Blog {
 
   @@index([authorId])
   @@index([status])
-  @@index([slug])
   @@map("blogs")
 }

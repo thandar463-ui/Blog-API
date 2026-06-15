@@ -3,6 +3,7 @@ import { userRoutes } from "./controllers/user.route";
 import fs from "fs";
 import { prisma } from "./lib/prisma";
 import dotenv from "dotenv";
+import { blogRoutes } from "./controllers/blog.route";
 dotenv.config();
 
 const PORT = process.env.PORT;
@@ -17,8 +18,10 @@ app.listen(PORT, () => {
   console.log(`✅ Express server running at http://localhost:${PORT}`);
 
 });
+
 app.use("/users", userRoutes);
 
+app.use("/blogs", blogRoutes);
 
 // async function main() {
 //   try {
