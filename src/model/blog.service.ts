@@ -2,6 +2,7 @@ import { prisma } from "../lib/prisma";
 import { User, Blog } from "../../generated/prisma/client";
 import { ApiError } from "../controllers/api-error";
 import { CreateBlogApiInput } from "../dtos/create-blog-api.dto";
+import { BlogListInput } from "../dtos/blog-list.dto";
 
 export async function createBlog(authorId: string, input: CreateBlogApiInput) {
 
@@ -63,3 +64,49 @@ export async function publishBlog(blogId: string, authorId: string) {
 
     return updatedBlog;
 }
+
+
+
+export async function blogList(input: BlogListInput) {
+    const skip = (input.page - 1) * input.size;
+
+    const [blogs, total] = await Promise.all([
+        prisma.blog.findMany({
+            where: {
+                status: "PUBLISHED",
+            },
+            skip,
+            take: input.size,
+            orderBy: {
+                createdAt: "desc",
+            },
+            include: {
+                author: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                    },
+                },
+            },
+        }),
+
+        prisma.blog.count({
+            where: {
+                status: "PUBLISHED",
+            },
+        }),
+    ]);
+
+    return {
+        blogs,
+        pagination: {
+            page: input.page,
+            size: input.size,
+            total,
+            totalPages: Math.ceil(total / input.size),
+        },
+    };
+}
+
+
