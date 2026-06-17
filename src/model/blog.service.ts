@@ -3,6 +3,7 @@ import { User, Blog } from "../../generated/prisma/client";
 import { ApiError } from "../controllers/api-error";
 import { CreateBlogApiInput } from "../dtos/create-blog-api.dto";
 import { BlogListInput } from "../dtos/blog-list.dto";
+import { UpdateBlogInput } from "../dtos/update-blog.dto";
 
 export async function createBlog(authorId: string, input: CreateBlogApiInput, coverImage?: string) {
 
@@ -108,6 +109,62 @@ export async function blogList(input: BlogListInput) {
             totalPages: Math.ceil(total / input.size),
         },
     };
+}
+
+export async function updateBlog(blogId: string, authorId: string, input: UpdateBlogInput) {
+    const blog = await prisma.blog.findFirst({
+        where: {
+            id: blogId,
+            authorId: authorId,
+        },
+    });
+
+    if (!blog) {
+        throw new ApiError("Blog not found", 404);
+    }
+
+    const updatedBlog = await prisma.blog.update({
+        where: {
+            id: blogId,
+        },
+        data: {
+            ...(input.title && {
+                title: input.title,
+            }),
+            ...(input.content && {
+                content: input.content,
+            }),
+
+            ...(input.excerpt && {
+                excerpt: input.excerpt,
+            }),
+        },
+    });
+    return updatedBlog;
+}
+
+export async function deleteBlog(blogId: string, authorId: string) {
+    const blog = await prisma.blog.findFirst({
+        where: {
+            id: blogId,
+            authorId,
+        },
+    });
+
+    if (!blog) {
+        throw new ApiError("Blog not found", 404);
+    }
+
+    const deletedBlog = await prisma.blog.update({
+        where: {
+            id: blogId,
+        },
+        data: {
+            deletedAt: new Date(),
+        },
+    });
+
+    return deletedBlog;
 }
 
 

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 import { CreateBlogApiDto } from "../dtos/create-blog-api.dto";
 import { BlogListDto } from "../dtos/blog-list.dto";
+import { UpdateBlogDto } from "../dtos/update-blog.dto";
 import { ApiError } from "./api-error";
 import { handleErrors } from "./handle-error";
 import * as blogService from "../model/blog.service";
@@ -61,6 +62,49 @@ export async function blogList(req: Request, res: Response, next: NextFunction) 
         return res.status(200).json({
             message: "Blogs feteched successfully",
             data: result,
+        });
+    } catch (err) {
+        next(err);
+    }
+}
+
+export async function updateBlog(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized", });
+        }
+
+        const blogId = req.params.id;
+        if (!blogId) {
+            return res.status(400).json({ message: "Blog id is required", });
+        }
+
+        const input = UpdateBlogDto.parse(req.body);
+        const blog = await blogService.updateBlog(blogId as string, req.user.id, input);
+
+        return res.status(200).json({
+            message: "Blog updated successfully",
+            data: blog,
+        });
+
+    } catch (err) {
+        next(err);
+    }
+}
+
+export async function deleteBlog(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized", });
+        }
+        const blogId = req.params.id;
+        const authorId = req.user?.id;
+        const result = await blogService.deleteBlog(blogId as string, authorId);
+
+        return res.status(200).json({
+            success: true,
+            message: "Blog deleted successfully",
+            deletedAt: result.deletedAt,
         });
     } catch (err) {
         next(err);
