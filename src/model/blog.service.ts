@@ -4,7 +4,7 @@ import { ApiError } from "../controllers/api-error";
 import { CreateBlogApiInput } from "../dtos/create-blog-api.dto";
 import { BlogListInput } from "../dtos/blog-list.dto";
 
-export async function createBlog(authorId: string, input: CreateBlogApiInput) {
+export async function createBlog(authorId: string, input: CreateBlogApiInput, coverImage?: string) {
 
     if (!authorId) {
         throw new ApiError("Author not found", 400);
@@ -21,6 +21,7 @@ export async function createBlog(authorId: string, input: CreateBlogApiInput) {
             slug,
             content: input.content,
             excerpt: input.excerpt,
+            coverImage,
             status: input.status,
 
             publishedAt: input.status === "PUBLISHED" ? new Date() : null,

@@ -13,7 +13,10 @@ export async function createBlog(req: AuthenticatedRequest, res: Response, next:
         }
 
         const input = CreateBlogApiDto.parse(req.body);
-        const blog = await blogService.createBlog(req.user.id, input);
+        const coverImage = req.file?.filename;
+        console.log(req.body);
+        console.log(req.file);
+        const blog = await blogService.createBlog(req.user.id, input, coverImage);
 
         return res.status(201).json({
             message: "Blog created successfully",

@@ -23,6 +23,8 @@ app.use("/users", userRoutes);
 
 app.use("/blogs", blogRoutes);
 
+app.use("/uploads", express.static("uploads"));
+
 // async function main() {
 //   try {
 //     // Create a new user with a post
