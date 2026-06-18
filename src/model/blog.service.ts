@@ -117,7 +117,7 @@ export async function blogList(authorId: string, input: BlogListInput) {
     };
 }
 
-export async function updateBlog(blogId: string, authorId: string, input: UpdateBlogInput) {
+export async function updateBlog(blogId: string, authorId: string, input: UpdateBlogInput, coverImage?: string) {
     const blog = await prisma.blog.findFirst({
         where: {
             id: blogId,
@@ -148,6 +148,10 @@ export async function updateBlog(blogId: string, authorId: string, input: Update
 
             ...(input.excerpt && {
                 excerpt: input.excerpt,
+            }),
+
+            ...(coverImage && {
+                coverImage,
             }),
         },
     });

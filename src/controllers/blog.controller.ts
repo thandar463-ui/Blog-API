@@ -81,7 +81,10 @@ export async function updateBlog(req: AuthenticatedRequest, res: Response, next:
         }
 
         const input = UpdateBlogDto.parse(req.body);
-        const blog = await blogService.updateBlog(blogId as string, req.user.id, input);
+
+        const coverImage = req.file?.filename;
+
+        const blog = await blogService.updateBlog(blogId as string, req.user.id, input, coverImage);
 
         return res.status(200).json({
             message: "Blog updated successfully",
