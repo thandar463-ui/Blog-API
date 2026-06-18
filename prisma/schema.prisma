@@ -32,7 +32,7 @@ model Blog {
   title       String
   slug        String     @unique
   content     String     @db.Text
-  excerpt     String     @db.Text
+  excerpt     String?
   coverImage  String?
   status      BlogStatus @default(DRAFT)
   publishedAt DateTime?

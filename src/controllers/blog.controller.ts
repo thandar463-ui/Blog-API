@@ -54,10 +54,11 @@ export async function publishBlog(req: AuthenticatedRequest, res: Response, next
     }
 }
 
-export async function blogList(req: Request, res: Response, next: NextFunction) {
+export async function blogList(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
+        const authorId = req.user?.id
         const input = BlogListDto.parse(req.body);
-        const result = await blogService.blogList(input);
+        const result = await blogService.blogList(authorId as string, input);
 
         return res.status(200).json({
             message: "Blogs feteched successfully",
@@ -108,5 +109,24 @@ export async function deleteBlog(req: AuthenticatedRequest, res: Response, next:
         });
     } catch (err) {
         next(err);
+    }
+}
+
+export async function getBlogDetail(req: Request, res: Response, next: NextFunction) {
+    try {
+        const blogId = req.params.id;
+
+        if (!blogId) {
+            return res.status(400).json({ meaasge: "Blog id is required", });
+        }
+
+        const blog = await blogService.getBlogDetail(blogId as string);
+
+        return res.status(200).json({
+            message: "Blog fetched successfully",
+            data: blog,
+        });
+    } catch (err) {
+        handleErrors(res, err);
     }
 }

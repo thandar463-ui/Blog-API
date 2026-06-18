@@ -69,13 +69,18 @@ export async function publishBlog(blogId: string, authorId: string) {
 
 
 
-export async function blogList(input: BlogListInput) {
+export async function blogList(authorId: string, input: BlogListInput) {
+
     const skip = (input.page - 1) * input.size;
 
     const [blogs, total] = await Promise.all([
         prisma.blog.findMany({
             where: {
                 status: "PUBLISHED",
+                deletedAt: null,
+                authorId: {
+                    not: authorId,
+                }
             },
             skip,
             take: input.size,
@@ -96,6 +101,7 @@ export async function blogList(input: BlogListInput) {
         prisma.blog.count({
             where: {
                 status: "PUBLISHED",
+                deletedAt: null,
             },
         }),
     ]);
@@ -116,6 +122,7 @@ export async function updateBlog(blogId: string, authorId: string, input: Update
         where: {
             id: blogId,
             authorId: authorId,
+
         },
     });
 
@@ -123,6 +130,10 @@ export async function updateBlog(blogId: string, authorId: string, input: Update
         throw new ApiError("Blog not found", 404);
     }
 
+
+    if (blog.deletedAt) {
+        throw new ApiError("Blog can not be updated", 400);
+    }
     const updatedBlog = await prisma.blog.update({
         where: {
             id: blogId,
@@ -155,6 +166,10 @@ export async function deleteBlog(blogId: string, authorId: string) {
         throw new ApiError("Blog not found", 404);
     }
 
+    if (blog.deletedAt !== null) {
+        throw new ApiError("Blog has already been deleted", 400);
+    }
+
     const deletedBlog = await prisma.blog.update({
         where: {
             id: blogId,
@@ -165,6 +180,33 @@ export async function deleteBlog(blogId: string, authorId: string) {
     });
 
     return deletedBlog;
+}
+
+export async function getBlogDetail(bolgId: string) {
+    const blog = await prisma.blog.findFirst({
+        where: {
+            id: bolgId,
+            status: "PUBLISHED",
+            deletedAt: null,
+        },
+
+        include: {
+            author: {
+                select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    email: true,
+                },
+            },
+        },
+    });
+
+    if (!blog) {
+        throw new ApiError("Blog not found", 404);
+    }
+
+    return blog;
 }
 
 

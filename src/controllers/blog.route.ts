@@ -12,5 +12,6 @@ router.patch("/publish/:id", authMiddleware, blogController.publishBlog);
 router.post("/list", blogController.blogList);
 router.patch("/:id", authMiddleware, blogController.updateBlog);
 router.delete("/:id", authMiddleware, blogController.deleteBlog);
+router.get("/:id", blogController.getBlogDetail);
 
 export { router as blogRoutes };

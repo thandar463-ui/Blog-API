@@ -50,8 +50,9 @@ export async function login(req: Request, res: Response, next: NextFunction) {
 
 export async function refreshToken(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        const { refreshToken } = req.body;
-        const data = await userService.refreshAccesstoken(refreshToken);
+        const input = RefreshTokenDto.parse(req.body);
+
+        const data = await userService.refreshAccesstoken(input.refreshToken);
 
         res.status(200).json({ data, message: " Access token generated successfully", });
     } catch (err) {
