@@ -23,24 +23,41 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  savedBlogs SavedBlog[]
 }
 
 model Blog {
-  id          String     @id @default(cuid())
+  id          String      @id @default(cuid())
   authorId    String
-  author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author      User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
   title       String
-  slug        String     @unique
-  content     String     @db.Text
+  slug        String      @unique
+  content     String      @db.Text
   excerpt     String?
   coverImage  String?
-  status      BlogStatus @default(DRAFT)
+  status      BlogStatus  @default(DRAFT)
   publishedAt DateTime?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
   deletedAt   DateTime?
+  savedBlogs  SavedBlog[]
 
   @@index([authorId])
   @@index([status])
   @@map("blogs")
+}
+
+model SavedBlog {
+  id String @id @default(cuid())
+
+  userId String
+  blogId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  blog Blog @relation(fields: [blogId], references: [id], onDelete: Cascade)
+
+  savedAt DateTime @default(now())
+
+  @@unique([userId, blogId])
 }
