@@ -133,3 +133,71 @@ export async function getBlogDetail(req: Request, res: Response, next: NextFunct
         handleErrors(res, err);
     }
 }
+
+export async function saveBlog(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized", });
+        }
+        const userId = req.user?.id;
+
+        const blogId = req.params.id;
+        console.log(blogId);
+        if (!blogId) {
+            return res.status(400).json({ message: "Blog id is required", });
+        }
+
+        const result = await blogService.saveBlog(userId, blogId as string);
+
+        return res.status(201).json({
+            message: "Blog saved successfully",
+            data: result,
+        });
+
+    } catch (err) {
+        next(err);
+    }
+}
+
+export async function removeSavedBlog(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized", });
+        }
+        const userId = req.user?.id;
+
+        const blogId = req.params.id;
+        if (!blogId) {
+            return res.status(400).json({ message: "Blog id is required", });
+        }
+
+        const result = await blogService.removeSavedBlog(userId, blogId as string);
+        return res.status(201).json({
+            message: "SavedBlog removed successfully",
+            data: result,
+        });
+
+    } catch (err) {
+        handleErrors(res, err);
+    }
+}
+
+export async function getSavedBlog(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized", });
+        }
+        const userId = req.user?.id;
+        const input = BlogListDto.parse(req.body);
+        const result = await blogService.getSavedBlog(userId, input);
+
+        return res.status(201).json({
+            message: "Savedblogs feteched successfully",
+            data: result,
+        });
+
+    } catch (err) {
+        next(err);
+    }
+}

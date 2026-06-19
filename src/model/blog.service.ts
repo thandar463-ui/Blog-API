@@ -34,6 +34,11 @@ export async function createBlog(authorId: string, input: CreateBlogApiInput, co
 }
 
 export async function publishBlog(blogId: string, authorId: string) {
+
+
+    if (!authorId) {
+        throw new ApiError("Author not found", 400);
+    }
     const blog = await prisma.blog.findFirst({
         where: {
             id: blogId,
@@ -70,6 +75,10 @@ export async function publishBlog(blogId: string, authorId: string) {
 
 
 export async function blogList(authorId: string, input: BlogListInput) {
+
+    if (!authorId) {
+        throw new ApiError("Author not found", 400);
+    }
 
     const skip = (input.page - 1) * input.size;
 
@@ -118,6 +127,12 @@ export async function blogList(authorId: string, input: BlogListInput) {
 }
 
 export async function updateBlog(blogId: string, authorId: string, input: UpdateBlogInput, coverImage?: string) {
+
+
+    if (!authorId) {
+        throw new ApiError("Author not found", 400);
+    }
+
     const blog = await prisma.blog.findFirst({
         where: {
             id: blogId,
@@ -211,6 +226,144 @@ export async function getBlogDetail(bolgId: string) {
     }
 
     return blog;
+}
+
+export async function saveBlog(userId: string, blogId: string) {
+    if (!userId) {
+        throw new ApiError("Author not found", 400);
+    }
+
+    const blog = await prisma.blog.findFirst({
+        where: {
+            id: blogId,
+            status: "PUBLISHED",
+            deletedAt: null,
+
+        },
+    });
+    if (!blog) {
+        throw new ApiError("Blog not found", 404);
+    }
+
+    if (blog.status !== "PUBLISHED") {
+        throw new ApiError("Blog has not published", 400);
+    }
+
+    if (blog.deletedAt !== null) {
+        throw new ApiError("Blog has already been deleted", 400);
+    }
+
+    const existing = await prisma.savedBlog.findUnique({
+        where: {
+            userId_blogId: {
+                userId: userId,
+                blogId: blogId,
+            },
+        },
+    });
+
+    if (existing) {
+        throw new ApiError("Blog already saved", 400);
+    }
+
+    const savedBlog = await prisma.savedBlog.create({
+        data: {
+            userId,
+            blogId
+        },
+
+    });
+
+    return savedBlog;
+}
+
+export async function removeSavedBlog(userId: string, blogId: string) {
+
+    if (!userId) {
+        throw new ApiError("Author not found", 400);
+    }
+    const existing = await prisma.savedBlog.findUnique({
+        where: {
+            userId_blogId: {
+                userId,
+                blogId,
+            },
+        },
+    });
+
+    if (!existing) {
+        throw new ApiError("Save blog not found", 404);
+
+    }
+    await prisma.savedBlog.delete({
+        where: {
+            userId_blogId: {
+                userId,
+                blogId,
+            },
+        },
+
+    });
+
+    return {
+        message: "Saved blog removed successfully",
+    };
+}
+
+
+export async function getSavedBlog(userId: string, input: BlogListInput) {
+    if (!userId) {
+        throw new ApiError("User not found", 400);
+    }
+
+    const skip = (input.page - 1) * input.size;
+
+    const [savedBlogs, total] = await Promise.all([
+        prisma.savedBlog.findMany({
+            where: {
+                userId: userId,
+                blog: {
+                    status: "PUBLISHED",
+                    deletedAt: null,
+                }
+
+            },
+            include: {
+                blog: {
+                    include: {
+                        author: {
+                            select: {
+                                id: true,
+                                firstName: true,
+                                lastName: true,
+                            },
+                        },
+                    },
+                },
+            },
+            orderBy: {
+                savedAt: "desc",
+            },
+            skip,
+            take: input.size,
+        }),
+
+        prisma.savedBlog.count({
+            where: {
+                userId: userId,
+            },
+        }),
+    ]);
+
+    return {
+        savedBlogs,
+        pagination: {
+            page: input.page,
+            size: input.size,
+            total,
+            totalPages: Math.ceil(total / input.size),
+        },
+    };
 }
 
 
