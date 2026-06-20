@@ -76,9 +76,7 @@ export async function publishBlog(blogId: string, authorId: string) {
 
 export async function blogList(authorId: string, input: BlogListInput) {
 
-    if (!authorId) {
-        throw new ApiError("Author not found", 400);
-    }
+
 
     const skip = (input.page - 1) * input.size;
 
@@ -104,6 +102,13 @@ export async function blogList(authorId: string, input: BlogListInput) {
                         lastName: true,
                     },
                 },
+                _count: {
+                    select: {
+                        likes: true,
+                    },
+                },
+
+
             },
         }),
 
@@ -111,12 +116,19 @@ export async function blogList(authorId: string, input: BlogListInput) {
             where: {
                 status: "PUBLISHED",
                 deletedAt: null,
+                authorId: {
+                    not: authorId,
+                }
             },
         }),
+
     ]);
 
     return {
-        blogs,
+        blogs: blogs.map((blog) => ({
+            ...blog,
+            likeCount: blog._count.likes,
+        })),
         pagination: {
             page: input.page,
             size: input.size,
@@ -218,6 +230,14 @@ export async function getBlogDetail(bolgId: string) {
                     email: true,
                 },
             },
+
+            _count: {
+                select: {
+                    likes: true,
+                },
+            },
+
+
         },
     });
 
@@ -225,7 +245,10 @@ export async function getBlogDetail(bolgId: string) {
         throw new ApiError("Blog not found", 404);
     }
 
-    return blog;
+    return {
+        ...blog,
+        likeCount: blog._count.likes,
+    };
 }
 
 export async function saveBlog(userId: string, blogId: string) {

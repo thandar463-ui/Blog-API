@@ -57,6 +57,7 @@ export async function publishBlog(req: AuthenticatedRequest, res: Response, next
 export async function blogList(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
         const authorId = req.user?.id
+        console.log(authorId);
         const input = BlogListDto.parse(req.body);
         const result = await blogService.blogList(authorId as string, input);
 
