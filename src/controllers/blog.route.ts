@@ -14,9 +14,9 @@ router.patch("/:id", authMiddleware, upload.single("coverImage"), blogController
 router.delete("/:id", authMiddleware, blogController.deleteBlog);
 router.get("/:id", blogController.getBlogDetail);
 
-router.post("/:id/save", authMiddleware, blogController.saveBlog);
+router.post("/save/:id", authMiddleware, blogController.saveBlog);
 
-router.delete("/:id/remove", authMiddleware, blogController.removeSavedBlog);
+router.delete("/remove/:id", authMiddleware, blogController.removeSavedBlog);
 
 router.get("/saved/list", authMiddleware, blogController.getSavedBlog);
 

@@ -142,7 +142,7 @@ export async function saveBlog(req: AuthenticatedRequest, res: Response, next: N
         const userId = req.user?.id;
 
         const blogId = req.params.id;
-        console.log(blogId);
+
         if (!blogId) {
             return res.status(400).json({ message: "Blog id is required", });
         }
@@ -185,9 +185,11 @@ export async function removeSavedBlog(req: AuthenticatedRequest, res: Response, 
 
 export async function getSavedBlog(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
+
         if (!req.user) {
             return res.status(401).json({ message: "Unauthorized", });
         }
+
         const userId = req.user?.id;
         const input = BlogListDto.parse(req.body);
         const result = await blogService.getSavedBlog(userId, input);
