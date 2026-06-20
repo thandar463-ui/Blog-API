@@ -203,3 +203,52 @@ export async function getSavedBlog(req: AuthenticatedRequest, res: Response, nex
         next(err);
     }
 }
+
+export async function likeBlog(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized", });
+        }
+        const userId = req.user?.id;
+
+        const blogId = req.params.id;
+
+        if (!blogId) {
+            return res.status(400).json({ message: "Blog id is required", });
+        }
+
+        const result = await blogService.likeBlog(userId, blogId as string);
+
+        return res.status(201).json({
+            message: "Blog liked successfully",
+            data: result,
+        });
+
+    } catch (err) {
+        handleErrors(res, err);
+    }
+}
+
+export async function unlikedBlog(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized", });
+        }
+        const userId = req.user?.id;
+
+        const blogId = req.params.id;
+        if (!blogId) {
+            return res.status(400).json({ message: "Blog id is required", });
+        }
+
+        const result = await blogService.unlikedBlog(userId, blogId as string);
+        return res.status(201).json({
+            message: "Blog unliked successfully",
+            data: result,
+        });
+
+    } catch (err) {
+        handleErrors(res, err);
+    }
+}

@@ -1,5 +1,5 @@
 import { prisma } from "../lib/prisma";
-import { User, Blog } from "../../generated/prisma/client";
+import { User, Blog, Like } from "../../generated/prisma/client";
 import { ApiError } from "../controllers/api-error";
 import { CreateBlogApiInput } from "../dtos/create-blog-api.dto";
 import { BlogListInput } from "../dtos/blog-list.dto";
@@ -366,4 +366,83 @@ export async function getSavedBlog(userId: string, input: BlogListInput) {
     };
 }
 
+export async function likeBlog(userId: string, blogId: string): Promise<Like> {
+    if (!userId) {
+        throw new ApiError("Author not found", 400);
+    }
 
+    const blog = await prisma.blog.findFirst({
+        where: {
+            id: blogId,
+            status: "PUBLISHED",
+            deletedAt: null,
+
+        },
+    });
+    if (!blog) {
+        throw new ApiError("Blog not found", 404);
+    }
+
+    if (blog.status !== "PUBLISHED") {
+        throw new ApiError("Blog has not published", 400);
+    }
+
+    if (blog.deletedAt !== null) {
+        throw new ApiError("Blog has already been deleted", 400);
+    }
+
+    const existing = await prisma.like.findUnique({
+        where: {
+            userId_blogId: {
+                userId: userId,
+                blogId: blogId,
+            },
+        },
+    });
+
+    if (existing) {
+        throw new ApiError("Blog already liked", 400);
+    }
+
+    const likedBlog = await prisma.like.create({
+        data: {
+            userId,
+            blogId
+        },
+
+    });
+
+    return likedBlog;
+}
+
+
+export async function unlikedBlog(userId: string, blogId: string) {
+
+    if (!userId) {
+        throw new ApiError("Author not found", 400);
+    }
+    const existing = await prisma.like.findUnique({
+        where: {
+            userId_blogId: {
+                userId,
+                blogId,
+            },
+        },
+    });
+
+    if (!existing) {
+        throw new ApiError("Liked blog not found", 404);
+
+    }
+    const unlike = await prisma.like.delete({
+        where: {
+            userId_blogId: {
+                userId,
+                blogId,
+            },
+        },
+
+    });
+
+    return unlike;
+}

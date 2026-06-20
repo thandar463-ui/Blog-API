@@ -20,4 +20,8 @@ router.delete("/remove/:id", authMiddleware, blogController.removeSavedBlog);
 
 router.get("/saved/list", authMiddleware, blogController.getSavedBlog);
 
+router.post("/like/:id", authMiddleware, blogController.likeBlog);
+
+router.delete("/unlike/:id", authMiddleware, blogController.unlikedBlog);
+
 export { router as blogRoutes };
