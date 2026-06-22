@@ -29,4 +29,6 @@ router.post("/comments", authMiddleware, blogController.createComment);
 
 router.post("/replies", authMiddleware, blogController.createReply);
 
+router.get("/comments/:id", blogController.commentList);
+
 export { router as blogRoutes };

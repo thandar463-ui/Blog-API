@@ -299,3 +299,24 @@ export async function createReply(req: AuthenticatedRequest, res: Response, next
         handleErrors(res, err);
     }
 }
+
+
+export async function commentList(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+
+        const blogId = req.params.id;
+        if (!blogId) {
+            return res.status(400).json({ message: "Blog id is required", });
+        }
+
+        const input = BlogListDto.parse(req.body);
+        const result = await blogService.commentList(blogId as string, input);
+
+        return res.status(200).json({
+            message: "Comments feteched successfully",
+            data: result,
+        });
+    } catch (err) {
+        handleErrors(res, err);
+    }
+}

@@ -546,3 +546,77 @@ export async function createReply(userId: string, input: CreateReplyApiInput) {
 
     return reply;
 }
+
+
+export async function commentList(blogId: string, input: BlogListInput) {
+
+    const blog = await prisma.blog.findFirst({
+        where: {
+            id: blogId,
+            status: "PUBLISHED",
+            deletedAt: null,
+        },
+    });
+
+    if (!blog) {
+        throw new ApiError("Blog not found", 404);
+    }
+
+    const skip = (input.page - 1) * input.size;
+
+    const [comments, total] = await Promise.all([
+        prisma.comment.findMany({
+            where: {
+                blogId,
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                    },
+                },
+                _count: {
+                    select: {
+                        replies: true,
+                    },
+                },
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+            skip,
+            take: input.size,
+        }),
+
+        prisma.comment.count({
+            where: {
+                blogId,
+            },
+        }),
+    ]);
+
+    return {
+        comments: comments.map((comment) => ({
+            id: comment.id,
+            content: comment.content,
+            createdAt: comment.createdAt,
+
+            user: {
+                id: comment.user.id,
+                firstName: comment.user.firstName,
+                lastName: comment.user.lastName,
+            },
+
+            replyCount: comment._count.replies,
+        })),
+
+        pagination: {
+            page: input.page,
+            size: input.size,
+            total,
+            totalPages: Math.ceil(total / input.size),
+        },
+    };
+}
