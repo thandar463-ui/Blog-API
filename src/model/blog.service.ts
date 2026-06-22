@@ -213,10 +213,10 @@ export async function deleteBlog(blogId: string, authorId: string) {
     return deletedBlog;
 }
 
-export async function getBlogDetail(bolgId: string) {
+export async function getBlogDetail(blogId: string) {
     const blog = await prisma.blog.findFirst({
         where: {
-            id: bolgId,
+            id: blogId,
             status: "PUBLISHED",
             deletedAt: null,
         },
