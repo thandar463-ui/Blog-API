@@ -24,4 +24,9 @@ router.post("/like/:id", authMiddleware, blogController.likeBlog);
 
 router.delete("/unlike/:id", authMiddleware, blogController.unlikedBlog);
 
+
+router.post("/comments", authMiddleware, blogController.createComment);
+
+router.post("/replies", authMiddleware, blogController.createReply);
+
 export { router as blogRoutes };

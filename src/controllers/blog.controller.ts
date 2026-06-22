@@ -6,6 +6,8 @@ import { UpdateBlogDto } from "../dtos/update-blog.dto";
 import { ApiError } from "./api-error";
 import { handleErrors } from "./handle-error";
 import * as blogService from "../model/blog.service";
+import { CreateCommentApiDto } from "../dtos/create_comment-api.dto";
+import { CreateReplyApiDto } from "../dtos/create_reply-api.dto";
 
 export async function createBlog(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
@@ -247,6 +249,50 @@ export async function unlikedBlog(req: AuthenticatedRequest, res: Response, next
         return res.status(201).json({
             message: "Blog unliked successfully",
             data: result,
+        });
+
+    } catch (err) {
+        handleErrors(res, err);
+    }
+}
+
+export async function createComment(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized", });
+
+        }
+        const userId = req.user?.id;
+
+        const input = CreateCommentApiDto.parse(req.body);
+
+        const comment = await blogService.createComment(userId, input);
+
+        return res.status(201).json({
+            success: true,
+            message: "Comment created successfully",
+            data: comment,
+        });
+    } catch (err) {
+        handleErrors(res, err);
+    }
+}
+
+export async function createReply(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized", });
+        }
+
+        const userId = req.user?.id;
+        const input = CreateReplyApiDto.parse(req.body);
+
+        const reply = await blogService.createReply(userId, input);
+
+        return res.status(201).json({
+            success: true,
+            message: " Reply on comment of blog post created successfully",
+            data: reply,
         });
 
     } catch (err) {

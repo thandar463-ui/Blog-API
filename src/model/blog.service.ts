@@ -4,6 +4,8 @@ import { ApiError } from "../controllers/api-error";
 import { CreateBlogApiInput } from "../dtos/create-blog-api.dto";
 import { BlogListInput } from "../dtos/blog-list.dto";
 import { UpdateBlogInput } from "../dtos/update-blog.dto";
+import { CreateCommentApiInput } from "../dtos/create_comment-api.dto";
+import { CreateReplyApiInput } from "../dtos/create_reply-api.dto";
 
 export async function createBlog(authorId: string, input: CreateBlogApiInput, coverImage?: string) {
 
@@ -468,4 +470,79 @@ export async function unlikedBlog(userId: string, blogId: string) {
     });
 
     return unlike;
+}
+
+export async function createComment(userId: string, input: CreateCommentApiInput) {
+
+    if (!userId) {
+        throw new ApiError("Author not found", 400);
+    }
+
+    const blog = await prisma.blog.findFirst({
+        where: {
+            id: input.blogId,
+
+            status: "PUBLISHED",
+            deletedAt: null,
+
+        },
+    });
+
+    if (!blog) {
+        throw new ApiError("Blog not found", 404);
+    }
+
+    const comment = await prisma.comment.create({
+        data: {
+            content: input.content,
+            userId,
+            blogId: input.blogId,
+        },
+        include: {
+            user: {
+                select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                },
+            },
+        },
+    });
+
+    return comment;
+}
+
+export async function createReply(userId: string, input: CreateReplyApiInput) {
+    if (!userId) {
+        throw new ApiError("Author not found", 400);
+    }
+
+    const comment = await prisma.comment.findUnique({
+        where: {
+            id: input.commentId,
+        },
+    });
+
+    if (!comment) {
+        throw new ApiError("Comment not found", 404);
+    }
+
+    const reply = await prisma.reply.create({
+        data: {
+            content: input.content,
+            userId,
+            commentId: input.commentId,
+        },
+        include: {
+            user: {
+                select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true
+                },
+            },
+        },
+    });
+
+    return reply;
 }
