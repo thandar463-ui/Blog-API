@@ -13,6 +13,7 @@ router.post("/list", blogController.blogList);
 router.patch("/:id", authMiddleware, upload.single("coverImage"), blogController.updateBlog);
 router.delete("/:id", authMiddleware, blogController.deleteBlog);
 router.get("/:id", blogController.getBlogDetail);
+router.post("/ownBlog", authMiddleware, blogController.ownBlogList);
 
 router.post("/save/:id", authMiddleware, blogController.saveBlog);
 
