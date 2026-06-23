@@ -133,9 +133,7 @@ model View {
   user User @relation(fields: [userId], references: [id])
   blog Blog @relation(fields: [blogId], references: [id])
 
-  viewAt DateTime
+  viewedAt DateTime
 
-  @@unique([userId, blogId, viewAt])
-  @@index([userId])
-  @@index([blogId])
+  @@unique([blogId, viewedAt, userId])
 }

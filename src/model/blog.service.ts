@@ -709,3 +709,41 @@ export async function replyList(blogId: string, commentId: string, input: BlogLi
 
     };
 }
+
+export async function viewBlog(blogId: string, userId: string) {
+    const blog = await prisma.blog.findFirst({
+        where: {
+            id: blogId,
+            status: "PUBLISHED",
+            deletedAt: null,
+        },
+
+    });
+
+    if (!blog) {
+        throw new ApiError("Blog not found", 404);
+    }
+
+    const now = new Date();
+    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+
+    const view = await prisma.view.upsert({
+        where: {
+            blogId_viewedAt_userId: {
+                blogId: blogId,
+                viewedAt: today,
+                userId: userId,
+            },
+        },
+
+        create: {
+            blogId: blogId,
+            viewedAt: today,
+            userId: userId,
+
+        },
+        update: {},
+    });
+
+    return view;
+}
