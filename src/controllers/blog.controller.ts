@@ -320,3 +320,31 @@ export async function commentList(req: AuthenticatedRequest, res: Response, next
         handleErrors(res, err);
     }
 }
+
+export async function replyList(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+
+        const blogId = req.params.id;
+        const commentId = req.params.commentId;
+
+        if (!blogId) {
+            return res.status(400).json({ message: "Blog id is required", });
+        }
+
+        if (!commentId) {
+            return res.status(400).json({ message: "Comment id is required", });
+        }
+
+        const input = BlogListDto.parse(req.body);
+
+        const result = await blogService.replyList(blogId as string, commentId as string, input);
+
+        return res.status(201).json({
+            message: "Replies fetched successfully",
+            data: result,
+        });
+
+    } catch (err) {
+        handleErrors(res, err);
+    }
+}
