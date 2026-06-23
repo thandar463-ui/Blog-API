@@ -350,7 +350,7 @@ export async function getSavedBlog(userId: string, input: BlogListInput) {
                 blog: {
                     status: "PUBLISHED",
                     deletedAt: null,
-                }
+                },
 
             },
             include: {
@@ -376,6 +376,11 @@ export async function getSavedBlog(userId: string, input: BlogListInput) {
         prisma.savedBlog.count({
             where: {
                 userId: userId,
+                blog: {
+                    status: "PUBLISHED",
+                    deletedAt: null,
+                },
+
             },
         }),
     ]);
@@ -520,6 +525,11 @@ export async function createReply(userId: string, input: CreateReplyApiInput) {
     const comment = await prisma.comment.findUnique({
         where: {
             id: input.commentId,
+            deletedAt: null,
+            blog: {
+                status: "PUBLISHED",
+                deletedAt: null,
+            },
         },
     });
 
@@ -568,6 +578,7 @@ export async function commentList(blogId: string, input: BlogListInput) {
         prisma.comment.findMany({
             where: {
                 blogId,
+                deletedAt: null,
             },
             include: {
                 user: {
@@ -593,6 +604,8 @@ export async function commentList(blogId: string, input: BlogListInput) {
         prisma.comment.count({
             where: {
                 blogId,
+                deletedAt: null,
+
             },
         }),
     ]);
@@ -626,7 +639,9 @@ export async function replyList(blogId: string, commentId: string, input: BlogLi
     const comment = await prisma.comment.findFirst({
         where: {
             id: commentId,
-            blogId: blogId,
+            blogId,
+            deletedAt: null,
+
         },
     });
 
@@ -634,12 +649,15 @@ export async function replyList(blogId: string, commentId: string, input: BlogLi
         throw new ApiError("Comment not found", 404);
     }
 
+
     const skip = (input.page - 1) * input.size;
 
     const [replies, total] = await Promise.all([
         prisma.reply.findMany({
             where: {
                 commentId,
+                deletedAt: null,
+
             },
             skip,
             take: input.size,
@@ -663,6 +681,8 @@ export async function replyList(blogId: string, commentId: string, input: BlogLi
         prisma.reply.count({
             where: {
                 commentId,
+                deletedAt: null,
+
             },
         }),
     ]);
