@@ -8,6 +8,7 @@ import { handleErrors } from "./handle-error";
 import * as blogService from "../model/blog.service";
 import { CreateCommentApiDto } from "../dtos/create_comment-api.dto";
 import { CreateReplyApiDto } from "../dtos/create_reply-api.dto";
+import { GetEnagementDto } from "../dtos/get-enagement-dto";
 
 export async function createBlog(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
@@ -437,6 +438,33 @@ export async function readBlog(req: AuthenticatedRequest, res: Response, next: N
 
         return res.status(201).json({
             message: "Blog mark as read",
+            data: result,
+        });
+
+    } catch (err) {
+        handleErrors(res, err);
+    }
+}
+
+export async function getBlogEnagement(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized", });
+        }
+
+        const userId = req.user?.id;
+
+        const blogId = req.params.id;
+
+        if (!blogId) {
+            return res.status(400).json({ message: "Blog id is required", });
+        }
+        const input = GetEnagementDto.parse(req.body);
+        const result = await blogService.getBlogEnagement(blogId as string, userId, input);
+
+        return res.status(201).json({
+            message: "Blog enagement fetched successfully",
             data: result,
         });
 

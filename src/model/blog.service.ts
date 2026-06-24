@@ -6,6 +6,7 @@ import { BlogListInput } from "../dtos/blog-list.dto";
 import { UpdateBlogInput } from "../dtos/update-blog.dto";
 import { CreateCommentApiInput } from "../dtos/create_comment-api.dto";
 import { CreateReplyApiInput } from "../dtos/create_reply-api.dto";
+import { GetEnagementInput } from "../dtos/get-enagement-dto";
 
 export async function createBlog(authorId: string, input: CreateBlogApiInput, coverImage?: string) {
 
@@ -923,3 +924,60 @@ export async function readBlog(blogId: string, userId: string) {
         },
     });
 }
+
+export async function getBlogEnagement(blogId: string, userId: string, input: GetEnagementInput) {
+
+    const blog = await prisma.blog.findUnique({
+        where: {
+            id: blogId,
+            deletedAt: null,
+        },
+    });
+
+    if (!blog) {
+        throw new ApiError("Blog not found", 404);
+    }
+
+    if (blog.authorId !== userId) {
+        throw new ApiError("You are not allowed to view this blog enagement", 403);
+    }
+
+    const inputDate = new Date(input.date);
+
+    if (isNaN(inputDate.getTime())) {
+        throw new ApiError("Invalid date format. Use YYYY-MM-DD", 400);
+    }
+
+    const startDate = new Date(Date.UTC(inputDate.getUTCFullYear(), inputDate.getUTCMonth(), 1));
+
+    const endDate = new Date(Date.UTC(inputDate.getUTCFullYear(), inputDate.getUTCMonth() + 1, 1));
+
+    const engagements =
+        await prisma.view.findMany({
+            where: {
+                blogId,
+                viewedAt: {
+                    gte: startDate,
+                    lt: endDate,
+                },
+            },
+            select: {
+                viewedAt: true,
+                isRead: true,
+            },
+            orderBy: {
+                viewedAt: "asc",
+            },
+        });
+
+    return {
+        blogId: blog.id,
+        title: blog.title,
+        period: `${startDate} to ${endDate}`,
+        views: engagements,
+        totalviewRecord: engagements.length,
+    };
+}
+
+
+
