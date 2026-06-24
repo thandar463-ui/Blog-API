@@ -133,6 +133,7 @@ model View {
   user User @relation(fields: [userId], references: [id])
   blog Blog @relation(fields: [blogId], references: [id])
 
+  isRead   Boolean  @default(false)
   viewedAt DateTime
 
   @@unique([blogId, viewedAt, userId])

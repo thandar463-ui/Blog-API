@@ -38,4 +38,6 @@ router.post("/:id/view", authMiddleware, blogController.viewBlog);
 
 router.get("/:id/stats", authMiddleware, blogController.getBlogStats);
 
+router.post("/:id/read", authMiddleware, blogController.readBlog);
+
 export { router as blogRoutes };

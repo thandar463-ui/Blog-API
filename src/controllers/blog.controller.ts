@@ -417,3 +417,30 @@ export async function getBlogStats(req: AuthenticatedRequest, res: Response, nex
         handleErrors(res, err);
     }
 }
+
+export async function readBlog(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized", });
+        }
+
+        const userId = req.user?.id;
+
+        const blogId = req.params.id;
+
+        if (!blogId) {
+            return res.status(400).json({ message: "Blog id is required", });
+        }
+
+        const result = await blogService.readBlog(blogId as string, userId);
+
+        return res.status(201).json({
+            message: "Blog mark as read",
+            data: result,
+        });
+
+    } catch (err) {
+        handleErrors(res, err);
+    }
+}

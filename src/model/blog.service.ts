@@ -869,3 +869,57 @@ export async function getBlogStats(blogId: string, userId: string) {
         }
     }
 }
+
+
+export async function readBlog(blogId: string, userId: string) {
+    const blog = await prisma.blog.findFirst({
+        where: {
+            id: blogId,
+            status: "PUBLISHED",
+            deletedAt: null
+        },
+        select: {
+            id: true,
+            authorId: true,
+        },
+    });
+
+    if (!blog) {
+        throw new ApiError("B;og not found", 404);
+    }
+
+    const now = new Date();
+    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+
+    const view = await prisma.view.findUnique({
+        where: {
+            blogId_viewedAt_userId: {
+                blogId: blogId,
+                viewedAt: today,
+                userId: userId,
+            },
+        },
+
+    });
+
+    if (!view) {
+        throw new ApiError(
+            "You must view the blog  before marking it as read", 400);
+    }
+
+    if (view.isRead) {
+        throw new ApiError("Blog already marked as read", 400);
+    }
+    return prisma.view.update({
+        where: {
+            blogId_viewedAt_userId: {
+                blogId: blogId,
+                viewedAt: today,
+                userId: userId,
+            },
+        },
+        data: {
+            isRead: true,
+        },
+    });
+}
