@@ -806,3 +806,66 @@ export async function ownBlogList(authorId: string, input: BlogListInput) {
         },
     };
 }
+
+
+export async function getBlogStats(blogId: string, userId: string) {
+
+    if (!userId) {
+        throw new ApiError("Author not found", 400);
+    }
+
+    const blog = await prisma.blog.findFirst({
+        where: {
+            id: blogId,
+            status: "PUBLISHED",
+            deletedAt: null,
+        },
+        select: {
+            id: true,
+            title: true,
+            authorId: true,
+            _count: {
+                select: {
+                    likes: true,
+
+                    views: true,
+                },
+            },
+
+        },
+    });
+
+    if (!blog) {
+        throw new ApiError("Blog not found", 404);
+    }
+
+    if (blog.authorId !== userId) {
+        throw new ApiError("You are not allowed thisblog statistics", 403);
+    }
+
+    const activeCommentsCount = await prisma.comment.count({
+        where: {
+            blogId: blogId,
+            deletedAt: null
+        }
+    });
+
+    const activeRepliesCount = await prisma.reply.count({
+        where: {
+            comment: {
+                blogId: blogId
+            },
+            deletedAt: null
+        }
+    });
+    return {
+        blogId: blog.id,
+        title: blog.title,
+        authorId: blog.authorId,
+        statistics: {
+            likeCount: blog._count.likes,
+            commentCount: activeCommentsCount + activeRepliesCount,
+            viewCount: blog._count.views,
+        }
+    }
+}
