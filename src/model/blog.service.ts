@@ -983,5 +983,17 @@ export async function getBlogEnagement(blogId: string, userId: string, input: Ge
     };
 }
 
+export async function getCategoryList() {
+    return prisma.category.findMany({
+        select: {
+            id: true,
+            name: true,
+        },
+        orderBy: {
+            name: "asc",
+        },
+    });
+}
+
 
 

@@ -4,6 +4,7 @@ import fs from "fs";
 import { prisma } from "./lib/prisma";
 import dotenv from "dotenv";
 import { blogRoutes } from "./controllers/blog.route";
+import { categoryRoutes } from "./controllers/category.route";
 dotenv.config();
 
 const PORT = process.env.PORT;
@@ -22,6 +23,8 @@ app.listen(PORT, () => {
 app.use("/users", userRoutes);
 
 app.use("/blogs", blogRoutes);
+
+app.use("/categories", categoryRoutes);
 
 app.use("/uploads", express.static("uploads"));
 
