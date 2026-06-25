@@ -724,10 +724,10 @@ export async function viewBlog(blogId: string, userId: string) {
     if (!blog) {
         throw new ApiError("Blog not found", 404);
     }
-
     if (blog.authorId === userId) {
-        return { message: "Author view not counted" };
+        return { message: "Blog viewd fetched successfully" };
     }
+
     const now = new Date();
     const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
@@ -749,7 +749,8 @@ export async function viewBlog(blogId: string, userId: string) {
         update: {},
     });
 
-    return view;
+    return { message: "Blog viewd fetched successfully" };
+
 }
 
 export async function ownBlogList(authorId: string, input: BlogListInput) {

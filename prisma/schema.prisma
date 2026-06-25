@@ -58,13 +58,10 @@ model Blog {
   likes       Like[]
   comments    Comment[]
   views       View[]
-  categoryId  String?
-
-  category Category? @relation(fields: [categoryId], references: [id])
+  categories  Category[]
 
   @@index([authorId])
   @@index([status])
-  @@index([categoryId])
   @@map("blogs")
 }
 
