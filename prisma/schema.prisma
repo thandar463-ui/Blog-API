@@ -31,6 +31,15 @@ model User {
   views      View[]
 }
 
+model Category {
+  id   String @id @default(cuid())
+  name String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  blogs     Blog[]
+}
+
 model Blog {
   id          String      @id @default(cuid())
   authorId    String
@@ -49,9 +58,13 @@ model Blog {
   likes       Like[]
   comments    Comment[]
   views       View[]
+  categoryId  String?
+
+  category Category? @relation(fields: [categoryId], references: [id])
 
   @@index([authorId])
   @@index([status])
+  @@index([categoryId])
   @@map("blogs")
 }
 
