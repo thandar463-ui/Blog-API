@@ -1,24 +1,32 @@
 import express from "express";
 import { userRoutes } from "./controllers/user.route";
+import { blogLogRoute } from "./controllers/blog-log.route";
 import fs from "fs";
-import { prisma } from "./lib/prisma";
+// import { prisma } from "./lib/prisma";
 import dotenv from "dotenv";
 import { blogRoutes } from "./controllers/blog.route";
 import { categoryRoutes } from "./controllers/category.route";
+
+import { requestId } from "./middlewares/requestId.middleware";
+import { requestLogger } from "./middlewares/request-logger.middleware";
+import { errorHandler } from "./middlewares/errorHandler.middleware";
+
 dotenv.config();
 
 const PORT = process.env.PORT;
-const app = express();
-app.use(express.json());
-
 if (PORT === undefined) {
   throw new Error("PORT is not provided");
 }
+const app = express();
+app.use(express.json());
 
-app.listen(PORT, () => {
-  console.log(`✅ Express server running at http://localhost:${PORT}`);
 
-});
+app.use(requestId);
+app.use(requestLogger);
+
+
+
+
 
 app.use("/users", userRoutes);
 
@@ -27,6 +35,15 @@ app.use("/blogs", blogRoutes);
 app.use("/categories", categoryRoutes);
 
 app.use("/uploads", express.static("uploads"));
+
+app.use("/blogLog", blogLogRoute);
+
+app.use(errorHandler);
+
+app.listen(PORT, () => {
+  console.log(`✅ Express server running at http://localhost:${PORT}`);
+
+});
 
 // async function main() {
 //   try {
