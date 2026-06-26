@@ -9,6 +9,7 @@ async function main() {
             { name: "Education" },
             { name: "Lifestyle" },
             { name: "Business" },
+            { name: "Health" },
         ],
         skipDuplicates: true,
     });

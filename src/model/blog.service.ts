@@ -1,4 +1,6 @@
 import { prisma } from "../lib/prisma";
+
+import { Prisma } from "../../generated/prisma/client";
 import { User, Blog, Like } from "../../generated/prisma/client";
 import { ApiError } from "../controllers/api-error";
 import { CreateBlogApiInput } from "../dtos/create-blog-api.dto";
@@ -7,6 +9,8 @@ import { UpdateBlogInput } from "../dtos/update-blog.dto";
 import { CreateCommentApiInput } from "../dtos/create_comment-api.dto";
 import { CreateReplyApiInput } from "../dtos/create_reply-api.dto";
 import { GetEnagementInput } from "../dtos/get-enagement-dto";
+import { GetBlogListCategoryInput } from "../dtos/get-bloglist-by-category.dto";
+import { connect } from "node:http2";
 
 export async function createBlog(authorId: string, input: CreateBlogApiInput, coverImage?: string) {
 
@@ -29,9 +33,28 @@ export async function createBlog(authorId: string, input: CreateBlogApiInput, co
             status: input.status,
 
             publishedAt: input.status === "PUBLISHED" ? new Date() : null,
+            categories:
+                input.categoryIds?.length
+                    ? {
+                        connect: input.categoryIds.map(id => ({
+                            id,
+                        })),
+                    } : undefined,
+        },
 
+
+        include: {
+            categories: {
+                select: {
+                    id: true,
+                    name: true,
+                    createdAt: true,
+                    updatedAt: true,
+                },
+            },
         },
     });
+
 
     return blog;
 }
@@ -983,17 +1006,83 @@ export async function getBlogEnagement(blogId: string, userId: string, input: Ge
     };
 }
 
-export async function getCategoryList() {
-    return prisma.category.findMany({
-        select: {
-            id: true,
-            name: true,
+export async function getBlogCategoryList(authorId: string, input: GetBlogListCategoryInput) {
+
+    const skip = (input.page - 1) * input.size;
+
+    const where: Prisma.BlogWhereInput = {
+        status: "PUBLISHED",
+        deletedAt: null,
+
+        authorId: {
+            not: authorId,
         },
-        orderBy: {
-            name: "asc",
-        },
-    });
+    };
+
+    if (input.categoryId) {
+        where.categories = {
+            some: {
+                id: input.categoryId,
+            },
+        };
+    }
+
+    const [blogs, totalBlogs] = await Promise.all([
+        prisma.blog.findMany({
+            where,
+
+            include: {
+                author: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        email: true,
+                    },
+                },
+
+                categories: {
+                    select: {
+                        id: true,
+                        name: true,
+                        createdAt: true,
+                    },
+                },
+
+                _count: {
+                    select: {
+                        likes: true,
+                        comments: true,
+                    },
+                },
+            },
+
+            skip,
+            take: input.size,
+
+            orderBy: {
+                createdAt: "desc",
+            },
+        }),
+
+        prisma.blog.count({
+            where,
+        }),
+    ]);
+
+    const formattedBlogs = blogs.map(
+        ({ _count, ...blog }) => ({
+            ...blog,
+            likeCount: _count.likes,
+            commentCount: _count.comments,
+        })
+    );
+
+    return {
+        blogs: formattedBlogs,
+        total: totalBlogs,
+        page: input.page,
+        size: input.size,
+        totalPages: Math.ceil(totalBlogs / input.size),
+    };
 }
-
-
-

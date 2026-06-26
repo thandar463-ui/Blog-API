@@ -9,12 +9,19 @@ import * as blogService from "../model/blog.service";
 import { CreateCommentApiDto } from "../dtos/create_comment-api.dto";
 import { CreateReplyApiDto } from "../dtos/create_reply-api.dto";
 import { GetEnagementDto } from "../dtos/get-enagement-dto";
+import { GetBlogListCategoryDto } from "../dtos/get-bloglist-by-category.dto";
+
 
 export async function createBlog(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
         if (!req.user) {
             return res.status(401).json({ meaaage: "Unauthorized", });
         }
+
+        if (typeof req.body.categoryIds === "string") {
+            req.body.categoryIds = [req.body.categoryIds];
+        }
+
 
         const input = CreateBlogApiDto.parse(req.body);
         const coverImage = req.file?.filename;
@@ -473,3 +480,18 @@ export async function getBlogEnagement(req: AuthenticatedRequest, res: Response,
     }
 }
 
+export async function getBlogCategoryList(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+        const authorId = req.user?.id
+        const input = GetBlogListCategoryDto.parse(req.body);
+
+        const result = await blogService.getBlogCategoryList(authorId as string, input);
+
+        return res.status(200).json({
+            message: "Blogs category fetched successfully",
+            data: result,
+        });
+    } catch (err) {
+        handleErrors(res, err);
+    }
+}

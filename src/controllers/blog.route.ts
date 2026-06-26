@@ -42,4 +42,6 @@ router.post("/:id/read", authMiddleware, blogController.readBlog);
 
 router.post("/:id/stats/engagement", authMiddleware, blogController.getBlogEnagement);
 
+router.post("/categorieslist", blogController.getBlogCategoryList);
+
 export { router as blogRoutes };
