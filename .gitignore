@@ -5,3 +5,4 @@
 .vscode/,.idea/
 *.tsbulidinfo
 /generated/prisma
+/src/uploads

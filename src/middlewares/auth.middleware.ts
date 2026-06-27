@@ -4,6 +4,7 @@ import { User } from "../../generated/prisma/client";
 import { prisma } from "../lib/prisma";
 import { verifyAccessToken } from "../model/jwt";
 import { ApiError } from "../controllers/api-error";
+import { logger } from "../lib/logger";
 
 export interface AuthenticatedRequest extends Request {
     user?: User;
@@ -89,7 +90,7 @@ export async function authMiddleware(
             });
         }
 
-        console.error(err);
+        logger.error(err);
 
         return res.status(500).json({
             message: "Internal server error",

@@ -1,6 +1,7 @@
 import { ApiError } from "./api-error";
 import { ZodError } from "zod";
 import { Response } from "express";
+import { logger } from "../lib/logger";
 
 function handleErrors(res: Response, err: unknown) {
 
@@ -19,7 +20,7 @@ function handleErrors(res: Response, err: unknown) {
         });
     }
 
-    console.error(err);
+    logger.error(err);
     const errorMessage = err instanceof Error ? err.message : "Internal server error";
     return res.status(500).json({ message: errorMessage, });
 }

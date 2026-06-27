@@ -1,6 +1,5 @@
 import express from "express";
 import { userRoutes } from "./controllers/user.route";
-import { blogLogRoute } from "./controllers/blog-log.route";
 import fs from "fs";
 // import { prisma } from "./lib/prisma";
 import dotenv from "dotenv";
@@ -36,9 +35,7 @@ app.use("/categories", categoryRoutes);
 
 app.use("/uploads", express.static("uploads"));
 
-app.use("/blogLog", blogLogRoute);
 
-app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`✅ Express server running at http://localhost:${PORT}`);

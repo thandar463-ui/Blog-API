@@ -14,11 +14,6 @@ import { connect } from "node:http2";
 
 export async function createBlog(authorId: string, input: CreateBlogApiInput, coverImage?: string) {
 
-    if (!authorId) {
-        throw new ApiError("Author not found", 400);
-    }
-
-
     const randomNumber = Math.floor(1000 + Math.random() * 9000);
     const slug = `${randomNumber}-${Date.now()}`;
 
@@ -61,10 +56,6 @@ export async function createBlog(authorId: string, input: CreateBlogApiInput, co
 
 export async function publishBlog(blogId: string, authorId: string) {
 
-
-    if (!authorId) {
-        throw new ApiError("Author not found", 400);
-    }
     const blog = await prisma.blog.findFirst({
         where: {
             id: blogId,
@@ -101,8 +92,6 @@ export async function publishBlog(blogId: string, authorId: string) {
 
 
 export async function blogList(authorId: string, input: BlogListInput) {
-
-
 
     const skip = (input.page - 1) * input.size;
 
@@ -166,11 +155,6 @@ export async function blogList(authorId: string, input: BlogListInput) {
 
 export async function updateBlog(blogId: string, authorId: string, input: UpdateBlogInput, coverImage?: string) {
 
-
-    if (!authorId) {
-        throw new ApiError("Author not found", 400);
-    }
-
     const blog = await prisma.blog.findFirst({
         where: {
             id: blogId,
@@ -212,6 +196,7 @@ export async function updateBlog(blogId: string, authorId: string, input: Update
 }
 
 export async function deleteBlog(blogId: string, authorId: string) {
+
     const blog = await prisma.blog.findFirst({
         where: {
             id: blogId,
@@ -240,6 +225,7 @@ export async function deleteBlog(blogId: string, authorId: string) {
 }
 
 export async function getBlogDetail(blogId: string) {
+
     const blog = await prisma.blog.findFirst({
         where: {
             id: blogId,
@@ -278,9 +264,6 @@ export async function getBlogDetail(blogId: string) {
 }
 
 export async function saveBlog(userId: string, blogId: string) {
-    if (!userId) {
-        throw new ApiError("Author not found", 400);
-    }
 
     const blog = await prisma.blog.findFirst({
         where: {
@@ -328,9 +311,6 @@ export async function saveBlog(userId: string, blogId: string) {
 
 export async function removeSavedBlog(userId: string, blogId: string) {
 
-    if (!userId) {
-        throw new ApiError("Author not found", 400);
-    }
     const existing = await prisma.savedBlog.findUnique({
         where: {
             userId_blogId: {
@@ -361,9 +341,6 @@ export async function removeSavedBlog(userId: string, blogId: string) {
 
 
 export async function getSavedBlog(userId: string, input: BlogListInput) {
-    if (!userId) {
-        throw new ApiError("User not found", 400);
-    }
 
     const skip = (input.page - 1) * input.size;
 
@@ -421,9 +398,6 @@ export async function getSavedBlog(userId: string, input: BlogListInput) {
 }
 
 export async function likeBlog(userId: string, blogId: string): Promise<Like> {
-    if (!userId) {
-        throw new ApiError("Author not found", 400);
-    }
 
     const blog = await prisma.blog.findFirst({
         where: {
@@ -472,9 +446,6 @@ export async function likeBlog(userId: string, blogId: string): Promise<Like> {
 
 export async function unlikedBlog(userId: string, blogId: string) {
 
-    if (!userId) {
-        throw new ApiError("Author not found", 400);
-    }
     const existing = await prisma.like.findUnique({
         where: {
             userId_blogId: {
@@ -502,10 +473,6 @@ export async function unlikedBlog(userId: string, blogId: string) {
 }
 
 export async function createComment(userId: string, input: CreateCommentApiInput) {
-
-    if (!userId) {
-        throw new ApiError("Author not found", 400);
-    }
 
     const blog = await prisma.blog.findFirst({
         where: {
@@ -542,9 +509,6 @@ export async function createComment(userId: string, input: CreateCommentApiInput
 }
 
 export async function createReply(userId: string, input: CreateReplyApiInput) {
-    if (!userId) {
-        throw new ApiError("Author not found", 400);
-    }
 
     const comment = await prisma.comment.findUnique({
         where: {
@@ -735,6 +699,7 @@ export async function replyList(blogId: string, commentId: string, input: BlogLi
 }
 
 export async function viewBlog(blogId: string, userId: string) {
+
     const blog = await prisma.blog.findFirst({
         where: {
             id: blogId,
@@ -777,8 +742,6 @@ export async function viewBlog(blogId: string, userId: string) {
 }
 
 export async function ownBlogList(authorId: string, input: BlogListInput) {
-
-
 
     const skip = (input.page - 1) * input.size;
 
@@ -837,10 +800,6 @@ export async function ownBlogList(authorId: string, input: BlogListInput) {
 
 
 export async function getBlogStats(blogId: string, userId: string) {
-
-    if (!userId) {
-        throw new ApiError("Author not found", 400);
-    }
 
     const blog = await prisma.blog.findFirst({
         where: {
