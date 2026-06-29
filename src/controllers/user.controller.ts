@@ -6,6 +6,8 @@ import { LoginDto } from "../dtos/login.dto";
 import { RefreshTokenDto } from "../dtos/refresh-token.dto";
 import { handleErrors } from "./handle-error";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
+import { SearchUserApiDto } from "../dtos/search-user-api.dto";
+import { BlogListDto } from "../dtos/blog-list.dto";
 
 
 /**
@@ -78,3 +80,124 @@ export async function getMe(req: AuthenticatedRequest, res: Response, next: Next
         next(err);
     }
 }
+
+export async function searchUser(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                message: "Unauthorized",
+            });
+        }
+        const input = SearchUserApiDto.parse(req.body);
+
+        const result = await userService.searchUser(req.user.id, input);
+
+        return res.status(200).json({
+            message: "Users searched successfully",
+            data: result,
+        });
+    } catch (err) {
+        handleErrors(res, err);
+    }
+}
+
+export async function followUser(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized", });
+        }
+        const followerId = req.user?.id;
+
+        const followingId = req.params.id;
+
+        if (!followingId) {
+            return res.status(400).json({ message: "Following user not found", });
+        }
+
+        const result = await userService.followUser(followerId, followingId as string);
+
+        return res.status(200).json({
+            message: "User followed successfully",
+            data: result,
+        });
+    } catch (err) {
+        handleErrors(res, err);
+    }
+}
+
+export async function unfollowUser(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized", });
+        }
+        const followerId = req.user?.id;
+
+        const followingId = req.params.id;
+
+        if (!followingId) {
+            return res.status(400).json({ message: "Following user not found", });
+        }
+
+        const result = await userService.unfollowUser(followerId, followingId as string);
+
+        return res.status(200).json({
+            message: "User unfollowed successfully",
+            data: result,
+        });
+    } catch (err) {
+        handleErrors(res, err);
+    }
+}
+
+export async function getFollowersList(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized", });
+        }
+        const followerId = req.user?.id;
+
+        const followingId = req.params.id;
+
+        if (!followingId) {
+            return res.status(400).json({ message: "Following user not found", });
+        }
+
+        const input = BlogListDto.parse(req.body);
+
+        const result = await userService.getFollowersList(followerId, followingId as string, input);
+
+        return res.status(200).json({
+            message: "Follower list fetched successfully",
+            data: result,
+        });
+    } catch (err) {
+        handleErrors(res, err);
+    }
+}
+
+export async function getFollowingList(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized", });
+        }
+        const currentUserId = req.user?.id;
+
+        const followerId = req.params.id;
+
+        if (!followerId) {
+            return res.status(400).json({ message: "Follower not found", });
+        }
+
+        const input = BlogListDto.parse(req.body);
+
+        const result = await userService.getFollowingList(followerId as string, currentUserId, input);
+
+        return res.status(200).json({
+            message: "Following list fetched successfully",
+            data: result,
+        });
+    } catch (err) {
+        handleErrors(res, err);
+    }
+}
+
