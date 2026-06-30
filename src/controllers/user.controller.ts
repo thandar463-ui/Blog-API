@@ -201,3 +201,50 @@ export async function getFollowingList(req: AuthenticatedRequest, res: Response,
     }
 }
 
+export async function subscribeUser(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized", });
+        }
+        const followerId = req.user?.id;
+
+        const followingId = req.params.id;
+
+        if (!followingId) {
+            return res.status(400).json({ message: "Subscribed user not found", });
+        }
+
+        const result = await userService.subscribeUser(followerId, followingId as string);
+
+        return res.status(200).json({
+            message: "User subscribed successfully",
+            data: result,
+        });
+    } catch (err) {
+        handleErrors(res, err);
+    }
+}
+
+export async function unsubscribeUser(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized", });
+        }
+        const followerId = req.user?.id;
+
+        const followingId = req.params.id;
+
+        if (!followingId) {
+            return res.status(400).json({ message: "Subscribed user not found", });
+        }
+
+        const result = await userService.unsubscribeUser(followerId, followingId as string);
+
+        return res.status(200).json({
+            message: "User unsubscribed successfully",
+            data: result,
+        });
+    } catch (err) {
+        handleErrors(res, err);
+    }
+}

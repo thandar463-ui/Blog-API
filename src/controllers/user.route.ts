@@ -13,5 +13,7 @@ router.post("/:id/follow", authMiddleware, userController.followUser);
 router.delete("/:id/unfollow", authMiddleware, userController.unfollowUser);
 router.get("/:id/followers", authMiddleware, userController.getFollowersList);
 router.get("/:id/following", authMiddleware, userController.getFollowingList);
+router.post("/:id/subscribe", authMiddleware, userController.subscribeUser);
+router.patch("/:id/unsubscribe", authMiddleware, userController.unsubscribeUser);
 
 export { router as userRoutes };

@@ -437,3 +437,72 @@ export async function getFollowingList(followerId: string, currentUserId: string
         }
     };
 }
+
+export async function subscribeUser(followerId: string, followingId: string) {
+    if (followerId === followingId) {
+        throw new ApiError("You cannot subscribe yourself", 400);
+    }
+
+
+    const subscription = await prisma.follow.upsert({
+        where: {
+            followerId_followingId: {
+                followerId,
+                followingId,
+            },
+        },
+
+        update: {
+            isSubscribed: true,
+        },
+
+        create: {
+            followerId,
+            followingId,
+            isSubscribed: true,
+        },
+    });
+
+    return subscription;
+
+}
+
+export async function unsubscribeUser(followerId: string, followingId: string) {
+    if (followerId === followingId) {
+        throw new ApiError("You cannot unsubscribe yourself", 400);
+    }
+
+    {
+        const existing = await prisma.follow.findUnique({
+            where: {
+                followerId_followingId: {
+                    followerId,
+                    followingId,
+                },
+            },
+        });
+
+        if (!existing) {
+            throw new ApiError("Subscription not found", 404);
+        }
+
+        if (!existing.isSubscribed) {
+            throw new ApiError("Already unsubscribed", 400);
+        }
+
+        const updated = await prisma.follow.update({
+            where: {
+                id: existing.id,
+            },
+            data: {
+                isSubscribed: false,
+            },
+        });
+
+
+        return {
+            message: "Unsubscribed successfully",
+            data: updated,
+        };
+    }
+}
