@@ -65,59 +65,99 @@ export async function createBlog(authorId: string, input: CreateBlogApiInput, co
             where: {
                 followingId: authorId,
             },
-            include: {
-                follower: true,
+            select: {
+                follower: {
+                    select: {
+                        email: true,
+                    },
+                },
             },
         });
 
-        for (const follow of followers) {
-            await sendMail(
-                follow.follower.email,
-                `  ${blog.author.firstName} ${blog.author.lastName}`,
-                blog.title,
-                blog.slug
-            );
-        }
+        await Promise.all(
+            followers.map((follow) =>
+                sendMail(
+                    follow.follower.email,
+                    `${blog.author.firstName} ${blog.author.lastName}`,
+                    blog.title,
+                    blog.slug
+                )
+            )
+        );
     }
-
-    return blog;
 }
 
-export async function publishBlog(blogId: string, authorId: string) {
+export async function publishBlog(blogId: string, authorId: string): Promise<Blog> {
 
-    const blog = await prisma.blog.findFirst({
+    const existingBlog = await prisma.blog.findUnique({
         where: {
             id: blogId,
-            authorId: authorId,
+        },
+        include: {
+            author: {
+                select: {
+                    firstName: true,
+                    lastName: true,
+                    email: true,
+                },
+            },
         },
     });
 
-    if (!blog) {
+    if (!existingBlog) {
         throw new ApiError("Blog not found", 404);
     }
 
-    if (blog.authorId !== authorId) {
-        throw new ApiError("You don't have permission to publish this blog", 403);
+    if (existingBlog.authorId !== authorId) {
+        throw new ApiError(
+            "You don't have permission to publish this blog",
+            403
+        );
     }
 
-    if (blog.status === "PUBLISHED") {
-        throw new ApiError("Blog already published", 400);
+    if (existingBlog.status === "PUBLISHED") {
+        throw new ApiError(
+            "This blog has already been published",
+            400
+        );
     }
 
-    const updatedBlog =
-        await prisma.blog.update({
-            where: {
-                id: blogId,
+    const updatedBlog = await prisma.blog.update({
+        where: {
+            id: blogId,
+        },
+        data: {
+            status: "PUBLISHED",
+            publishedAt: new Date(),
+        },
+    });
+
+    const followers = await prisma.follow.findMany({
+        where: {
+            followingId: authorId,
+        },
+        select: {
+            follower: {
+                select: {
+                    email: true,
+                },
             },
-            data: {
-                status: "PUBLISHED",
-                publishedAt: new Date(),
-            },
-        });
+        },
+    });
+
+    await Promise.all(
+        followers.map((follow) =>
+            sendMail(
+                follow.follower.email,
+                `${existingBlog.author.firstName} ${existingBlog.author.lastName}`,
+                existingBlog.title,
+                existingBlog.slug
+            )
+        )
+    );
 
     return updatedBlog;
 }
-
 
 
 export async function blogList(authorId: string, input: BlogListInput) {
