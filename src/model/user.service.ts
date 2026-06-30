@@ -438,34 +438,51 @@ export async function getFollowingList(followerId: string, currentUserId: string
     };
 }
 
+
 export async function subscribeUser(followerId: string, followingId: string) {
+
     if (followerId === followingId) {
         throw new ApiError("You cannot subscribe yourself", 400);
     }
 
 
-    const subscription = await prisma.follow.upsert({
+    const follow = await prisma.follow.findUnique({
         where: {
             followerId_followingId: {
                 followerId,
                 followingId,
             },
         },
+    });
 
-        update: {
-            isSubscribed: true,
+    if (!follow) {
+        throw new ApiError(
+            "You must follow this user before subscribing",
+            400,
+        );
+    }
+
+    if (follow.isSubscribed) {
+        throw new ApiError("Already subscribed", 400);
+
+    }
+
+
+    const subscription = await prisma.follow.update({
+        where: {
+            followerId_followingId: {
+                followerId,
+                followingId,
+            },
         },
-
-        create: {
-            followerId,
-            followingId,
+        data: {
             isSubscribed: true,
         },
     });
 
     return subscription;
-
 }
+
 
 export async function unsubscribeUser(followerId: string, followingId: string) {
     if (followerId === followingId) {
