@@ -11,6 +11,7 @@ import { CreateReplyApiInput } from "../dtos/create_reply-api.dto";
 import { GetEnagementInput } from "../dtos/get-enagement-dto";
 import { GetBlogListCategoryInput } from "../dtos/get-bloglist-by-category.dto";
 import { connect } from "node:http2";
+import { sendMail } from "./mail.service";
 
 export async function createBlog(authorId: string, input: CreateBlogApiInput, coverImage?: string) {
 
@@ -39,6 +40,13 @@ export async function createBlog(authorId: string, input: CreateBlogApiInput, co
 
 
         include: {
+            author: {
+                select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                },
+            },
             categories: {
                 select: {
                     id: true,
@@ -50,6 +58,27 @@ export async function createBlog(authorId: string, input: CreateBlogApiInput, co
         },
     });
 
+
+    if (blog.status === "PUBLISHED") {
+
+        const followers = await prisma.follow.findMany({
+            where: {
+                followingId: authorId,
+            },
+            include: {
+                follower: true,
+            },
+        });
+
+        for (const follow of followers) {
+            await sendMail(
+                follow.follower.email,
+                `  ${blog.author.firstName} ${blog.author.lastName}`,
+                blog.title,
+                blog.slug
+            );
+        }
+    }
 
     return blog;
 }
