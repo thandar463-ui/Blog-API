@@ -248,3 +248,23 @@ export async function unsubscribeUser(req: AuthenticatedRequest, res: Response, 
         handleErrors(res, err);
     }
 }
+
+export async function suggestionList(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                message: "Unauthorized",
+            });
+        }
+        const input = BlogListDto.parse(req.body);
+
+        const result = await userService.suggestionList(req.user.id, input);
+
+        return res.status(200).json({
+            message: "Suggestion list fetched successfully",
+            data: result,
+        });
+    } catch (err) {
+        handleErrors(res, err);
+    }
+}

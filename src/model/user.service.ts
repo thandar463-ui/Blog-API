@@ -517,3 +517,72 @@ export async function unsubscribeUser(followerId: string, followingId: string) {
         };
     }
 }
+
+
+
+export async function suggestionList(currentUserId: string, input: BlogListInput) {
+    const skip = (input.page - 1) * input.size;
+
+    const following = await prisma.follow.findMany({
+        where: {
+            followerId: currentUserId,
+        },
+        select: {
+            followingId: true,
+        },
+    });
+
+    const followingIds = following.map((f) => f.followingId);
+
+    const where: Prisma.UserWhereInput = {
+        id: {
+            notIn: [currentUserId, ...followingIds],
+        },
+    };
+
+    const [users, total] = await Promise.all([
+        prisma.user.findMany({
+            where,
+            skip,
+            take: input.size,
+            orderBy: {
+                createdAt: "desc",
+            },
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+
+                _count: {
+                    select: {
+                        followers: true,
+                        following: true,
+                    },
+                },
+            },
+        }),
+
+        prisma.user.count({
+            where,
+        }),
+    ]);
+
+    return {
+        users: users.map((user) => ({
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            followersCount: user._count.followers,
+            followingCount: user._count.following,
+        })),
+
+        pagination: {
+            page: input.page,
+            size: input.size,
+            total,
+            totalPages: Math.ceil(total / input.size),
+        },
+    };
+}
