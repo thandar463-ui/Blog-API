@@ -12,6 +12,7 @@ import { GetEnagementInput } from "../dtos/get-enagement-dto";
 import { GetBlogListCategoryInput } from "../dtos/get-bloglist-by-category.dto";
 import { connect } from "node:http2";
 import { sendMail } from "./mail.service";
+import { SearchUserApiInput } from "../dtos/search-user-api.dto";
 
 export async function createBlog(authorId: string, input: CreateBlogApiInput, coverImage?: string) {
 
@@ -1114,5 +1115,113 @@ export async function getBlogCategoryList(authorId: string, input: GetBlogListCa
         page: input.page,
         size: input.size,
         totalPages: Math.ceil(totalBlogs / input.size),
+    };
+}
+
+
+export async function searchBlogs(currentUserId: string, input: SearchUserApiInput) {
+
+    const skip = (input.page - 1) * input.size;
+
+    const where: Prisma.BlogWhereInput = {
+        deletedAt: null,
+        OR: [
+            {
+                status: "PUBLISHED",
+            },
+
+            {
+                authorId: currentUserId,
+                status: "DRAFT",
+            }
+        ]
+
+    };
+
+    if (input.search) {
+        where.title = {
+            contains: input.search,
+            mode: "insensitive"
+        };
+    }
+
+    const [blogs, total] = await Promise.all([
+        prisma.blog.findMany({
+            where,
+            skip,
+            take: input.size,
+            select: {
+                id: true,
+                title: true,
+                content: true,
+                createdAt: true,
+                author: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        email: true,
+                        followers: {
+                            where: {
+                                followerId: currentUserId
+                            },
+                            select: {
+                                id: true,
+                                isSubscribed: true
+                            },
+                        },
+                        _count: {
+                            select: {
+                                followers: true,
+                                following: true
+                            },
+                        },
+                    },
+                },
+            },
+            orderBy: {
+                createdAt: "desc"
+            },
+        }),
+
+        prisma.blog.count({
+            where,
+        }),
+    ]);
+
+    if (total === 0) {
+        throw new ApiError("No blog found", 404);
+    }
+
+    return {
+        blogs: blogs.map((blog) => {
+            const author = blog.author;
+            const isMe = author.id === currentUserId;
+
+            return {
+                id: blog.id,
+                title: blog.title,
+                content: blog.content,
+                createdAt: blog.createdAt,
+
+                author: {
+                    id: author.id,
+                    firstName: author.firstName,
+                    lastname: author.lastName,
+                    email: author.email,
+                    followersCount: author._count.followers,
+                    followingCount: author._count.following,
+                    isMe: isMe,
+                    isFollowed: isMe ? false : author.followers.length > 0,
+                    isSubscribed: isMe ? false : (author.followers.length > 0 ? author.followers[0].isSubscribed : false)
+                }
+            };
+        }),
+        pagination: {
+            page: input.page,
+            size: input.size,
+            total,
+            totalPages: Math.ceil(total / input.size),
+        },
     };
 }

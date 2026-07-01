@@ -44,4 +44,6 @@ router.post("/:id/stats/engagement", authMiddleware, blogController.getBlogEnage
 
 router.post("/categorieslist", blogController.getBlogCategoryList);
 
+router.post("/search", authMiddleware, blogController.searchBlogs);
+
 export { router as blogRoutes };

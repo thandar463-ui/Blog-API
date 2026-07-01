@@ -10,6 +10,7 @@ import { CreateCommentApiDto } from "../dtos/create_comment-api.dto";
 import { CreateReplyApiDto } from "../dtos/create_reply-api.dto";
 import { GetEnagementDto } from "../dtos/get-enagement-dto";
 import { GetBlogListCategoryDto } from "../dtos/get-bloglist-by-category.dto";
+import { SearchUserApiDto } from "../dtos/search-user-api.dto";
 
 
 export async function createBlog(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -489,6 +490,26 @@ export async function getBlogCategoryList(req: AuthenticatedRequest, res: Respon
 
         return res.status(200).json({
             message: "Blogs category fetched successfully",
+            data: result,
+        });
+    } catch (err) {
+        handleErrors(res, err);
+    }
+}
+
+export async function searchBlogs(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                message: "Unauthorized",
+            });
+        }
+        const input = SearchUserApiDto.parse(req.body);
+
+        const result = await blogService.searchBlogs(req.user.id, input);
+
+        return res.status(200).json({
+            message: "Blogs searched successfully",
             data: result,
         });
     } catch (err) {
