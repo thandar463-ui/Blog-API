@@ -353,6 +353,7 @@ export async function getFollowersList(followerId: string, followingId: string, 
                 followersCount: followRow.follower._count.followers,
                 followingCount: followRow.follower._count.following,
                 isMe,
+                isSubscribed: followRow.isSubscribed,
 
             };
 
@@ -387,14 +388,6 @@ export async function getFollowingList(followerId: string, currentUserId: string
                         lastName: true,
                         email: true,
 
-                        followers: {
-                            where: {
-                                followerId: currentUserId,
-                            },
-                            select: {
-                                id: true,
-                            },
-                        },
 
                         _count: {
                             select: {
@@ -426,6 +419,7 @@ export async function getFollowingList(followerId: string, currentUserId: string
                 followersCount: followRow.following._count.followers,
                 followingCount: followRow.following._count.following,
                 isMe: isMe,
+                isSubscribed: followRow.isSubscribed,
             }
 
         }),
