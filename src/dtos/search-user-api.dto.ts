@@ -1,7 +1,11 @@
 import { z } from "zod";
 
 export const SearchUserApiDto = z.object({
-    page: z.coerce.number(),
+    cursor: z.object({
+        firstName: z.string(),
+        lastName: z.string(),
+        id: z.string(),
+    }).optional(),
     size: z.coerce.number(),
     search: z.string().optional(),
 });

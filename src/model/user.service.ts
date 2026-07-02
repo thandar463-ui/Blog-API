@@ -133,7 +133,7 @@ export async function getMe(userId: string) {
 }
 
 export async function searchUser(currentUserId: string, input: SearchUserApiInput) {
-    const skip = (input.page - 1) * input.size;
+
     const where: Prisma.UserWhereInput = {
         id: {
             not: currentUserId,
@@ -165,43 +165,68 @@ export async function searchUser(currentUserId: string, input: SearchUserApiInpu
         }),
     };
 
-    const [users, total] = await Promise.all([
-        prisma.user.findMany({
-            where,
-            skip,
-            take: input.size,
-            orderBy: {
-                createdAt: "desc",
+
+    const users = await prisma.user.findMany({
+        where,
+        take: input.size + 1,
+
+        ...(input.cursor && {
+            cursor: {
+                id: input.cursor.id,
+                firstName: input.cursor.firstName,
+                lastName: input.cursor.lastName,
             },
-
-            select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true,
-
-                _count: {
-                    select: {
-                        followers: true,
-                        following: true,
-                    },
-                },
-
-                followers: {
-                    where: {
-                        followerId: currentUserId,
-                    },
-                    select: {
-                        id: true,
-                    },
-                },
-            },
+            skip: 1,
         }),
 
-        prisma.user.count({
-            where,
-        }),
-    ]);
+
+        select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+
+            _count: {
+                select: {
+                    followers: true,
+                    following: true,
+                },
+            },
+
+            followers: {
+                where: {
+                    followerId: currentUserId,
+                },
+                select: {
+                    id: true,
+                },
+            },
+
+        },
+        orderBy: [
+            {
+                firstName: "asc"
+            },
+            {
+                lastName: "asc"
+            },
+            {
+                id: "asc"
+            },
+        ],
+    });
+
+
+    let nextCursor: { firstName: string; lastName: string; id: string } | null = null;
+
+    if (users.length > input.size) {
+        const nextItem = users.pop();
+        nextCursor = {
+            firstName: nextItem!.firstName,
+            lastName: nextItem!.lastName,
+            id: nextItem!.id,
+        };
+    }
 
     return {
         users: users.map((user) => ({
@@ -215,13 +240,13 @@ export async function searchUser(currentUserId: string, input: SearchUserApiInpu
 
             isFollowed: user.followers.length > 0,
         })),
-
         pagination: {
-            page: input.page,
+            nextCursor,
             size: input.size,
-            total,
-            totalPages: Math.ceil(total / input.size),
+            hasNextPage: !!nextCursor,
         },
+
+
     };
 }
 

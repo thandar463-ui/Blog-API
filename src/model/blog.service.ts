@@ -1063,7 +1063,10 @@ export async function getBlogCategoryList(authorId: string, input: GetBlogListCa
 
         ...(input.cursor && {
             cursor: {
-                id: input.cursor,
+                createdAt_id: {
+                    createdAt: input.cursor.createdAt,
+                    id: input.cursor.id,
+                },
             },
             skip: 1,
         }),
@@ -1103,11 +1106,17 @@ export async function getBlogCategoryList(authorId: string, input: GetBlogListCa
         },
     });
 
-    let nextCursor: string | null = null;
+    let nextCursor: { id: string; createdAt: Date } | null = null;
 
     if (blogs.length > input.size) {
-        const nextBlog = blogs.pop();
-        nextCursor = nextBlog!.id;
+        blogs.pop();
+        const lastItem = blogs[blogs.length - 1];
+        if (lastItem) {
+            nextCursor = {
+                id: lastItem.id,
+                createdAt: lastItem.createdAt,
+            };
+        }
     }
 
     const formattedBlogs = blogs.map(({ _count, ...blog }) => ({
@@ -1125,6 +1134,7 @@ export async function getBlogCategoryList(authorId: string, input: GetBlogListCa
         },
     };
 }
+
 export async function searchBlogs(currentUserId: string, input: CursorBlogListInput) {
 
     const where: Prisma.BlogWhereInput = {
@@ -1145,7 +1155,10 @@ export async function searchBlogs(currentUserId: string, input: CursorBlogListIn
         take: input.size + 1,
         ...(input.cursor && {
             cursor: {
-                id: input.cursor,
+                createdAt_id: {
+                    createdAt: input.cursor.createdAt,
+                    id: input.cursor.id,
+                },
             },
             skip: 1,
         }),
@@ -1189,12 +1202,18 @@ export async function searchBlogs(currentUserId: string, input: CursorBlogListIn
         ],
     });
 
-    let nextCursor: string | null = null;
-
+    let nextCursor: { id: string; createdAt: Date } | null = null;
     if (blogs.length > input.size) {
-        const nextItem = blogs.pop();
-        nextCursor = nextItem!.id;
+        blogs.pop();
+        const lastItem = blogs[blogs.length - 1];
+        if (lastItem) {
+            nextCursor = {
+                id: lastItem.id,
+                createdAt: lastItem.createdAt,
+            };
+        }
     }
+
 
     return {
         blogs: blogs.map((blog) => {
