@@ -13,6 +13,7 @@ import { GetBlogListCategoryInput } from "../dtos/get-bloglist-by-category.dto";
 import { connect } from "node:http2";
 import { sendMail } from "./mail.service";
 import { SearchUserApiInput } from "../dtos/search-user-api.dto";
+import { CursorBlogListInput } from "../dtos/cursor-blog-list.dto";
 
 export async function createBlog(authorId: string, input: CreateBlogApiInput, coverImage?: string) {
 
@@ -1039,12 +1040,9 @@ export async function getBlogEnagement(blogId: string, userId: string, input: Ge
 
 export async function getBlogCategoryList(authorId: string, input: GetBlogListCategoryInput) {
 
-    const skip = (input.page - 1) * input.size;
-
     const where: Prisma.BlogWhereInput = {
         status: "PUBLISHED",
         deletedAt: null,
-
         authorId: {
             not: authorId,
         },
@@ -1058,70 +1056,76 @@ export async function getBlogCategoryList(authorId: string, input: GetBlogListCa
         };
     }
 
-    const [blogs, totalBlogs] = await Promise.all([
-        prisma.blog.findMany({
-            where,
+    const blogs = await prisma.blog.findMany({
+        where,
 
-            include: {
-                author: {
-                    select: {
-                        id: true,
-                        firstName: true,
-                        lastName: true,
-                        email: true,
-                    },
-                },
+        take: input.size + 1,
 
-                categories: {
-                    select: {
-                        id: true,
-                        name: true,
-                        createdAt: true,
-                    },
-                },
-
-                _count: {
-                    select: {
-                        likes: true,
-                        comments: true,
-                    },
-                },
+        ...(input.cursor && {
+            cursor: {
+                id: input.cursor,
             },
+            skip: 1,
+        }),
 
-            skip,
-            take: input.size,
-
-            orderBy: {
+        orderBy: [
+            {
                 createdAt: "desc",
             },
-        }),
+            {
+                id: "desc",
+            },
+        ],
 
-        prisma.blog.count({
-            where,
-        }),
-    ]);
+        include: {
+            author: {
+                select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    email: true,
+                },
+            },
 
-    const formattedBlogs = blogs.map(
-        ({ _count, ...blog }) => ({
-            ...blog,
-            likeCount: _count.likes,
-            commentCount: _count.comments,
-        })
-    );
+            categories: {
+                select: {
+                    id: true,
+                    name: true,
+                },
+            },
+
+            _count: {
+                select: {
+                    likes: true,
+                    comments: true,
+                },
+            },
+        },
+    });
+
+    let nextCursor: string | null = null;
+
+    if (blogs.length > input.size) {
+        const nextBlog = blogs.pop();
+        nextCursor = nextBlog!.id;
+    }
+
+    const formattedBlogs = blogs.map(({ _count, ...blog }) => ({
+        ...blog,
+        likeCount: _count.likes,
+        commentCount: _count.comments,
+    }));
 
     return {
         blogs: formattedBlogs,
-        total: totalBlogs,
-        page: input.page,
-        size: input.size,
-        totalPages: Math.ceil(totalBlogs / input.size),
+        pagination: {
+            nextCursor,
+            size: input.size,
+            hasNextPage: !!nextCursor,
+        },
     };
 }
-
-
-export async function searchBlogs(currentUserId: string, input: SearchUserApiInput) {
-
-    const skip = (input.page - 1) * input.size;
+export async function searchBlogs(currentUserId: string, input: CursorBlogListInput) {
 
     const where: Prisma.BlogWhereInput = {
         deletedAt: null,
@@ -1131,56 +1135,65 @@ export async function searchBlogs(currentUserId: string, input: SearchUserApiInp
     if (input.search) {
         where.title = {
             contains: input.search,
-            mode: "insensitive"
+            mode: "insensitive",
         };
     }
 
-    const [blogs, total] = await Promise.all([
-        prisma.blog.findMany({
-            where,
-            skip,
-            take: input.size,
-            select: {
-                id: true,
-                title: true,
-                content: true,
-                createdAt: true,
-                author: {
-                    select: {
-                        id: true,
-                        firstName: true,
-                        lastName: true,
-                        email: true,
-                        followers: {
-                            where: {
-                                followerId: currentUserId
-                            },
-                            select: {
-                                id: true,
-                                isSubscribed: true
-                            },
+    const blogs = await prisma.blog.findMany({
+        where,
+
+        take: input.size + 1,
+        ...(input.cursor && {
+            cursor: {
+                id: input.cursor,
+            },
+            skip: 1,
+        }),
+
+        select: {
+            id: true,
+            title: true,
+            content: true,
+            createdAt: true,
+
+            author: {
+                select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    email: true,
+
+                    followers: {
+                        where: {
+                            followerId: currentUserId,
                         },
-                        _count: {
-                            select: {
-                                followers: true,
-                                following: true
-                            },
+                        select: {
+                            id: true,
+                            isSubscribed: true,
+                        },
+                    },
+
+                    _count: {
+                        select: {
+                            followers: true,
+                            following: true,
                         },
                     },
                 },
             },
-            orderBy: {
-                createdAt: "desc"
-            },
-        }),
+        },
 
-        prisma.blog.count({
-            where,
-        }),
-    ]);
+        orderBy: [
+            { createdAt: "desc" },
+            { id: "desc" },
+        ],
+    });
 
-    if (total === 0) {
-        throw new ApiError("No blog found", 404);
+    let nextCursor: string | null = null;
+
+    if (blogs.length > input.size) {
+        const nextItem = blogs.pop();
+        nextCursor = nextItem!.id;
     }
 
     return {
@@ -1199,19 +1212,25 @@ export async function searchBlogs(currentUserId: string, input: SearchUserApiInp
                     firstName: author.firstName,
                     lastName: author.lastName,
                     email: author.email,
+
                     followersCount: author._count.followers,
                     followingCount: author._count.following,
-                    isMe: isMe,
+
+                    isMe,
                     isFollowed: isMe ? false : author.followers.length > 0,
-                    isSubscribed: isMe ? false : (author.followers.length > 0 ? author.followers[0].isSubscribed : false)
-                }
+                    isSubscribed: isMe
+                        ? false
+                        : author.followers.length > 0
+                            ? author.followers[0].isSubscribed
+                            : false,
+                },
             };
         }),
+
         pagination: {
-            page: input.page,
+            nextCursor,
             size: input.size,
-            total,
-            totalPages: Math.ceil(total / input.size),
+            hasNextPage: !!nextCursor,
         },
     };
 }

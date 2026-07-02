@@ -11,6 +11,7 @@ import { CreateReplyApiDto } from "../dtos/create_reply-api.dto";
 import { GetEnagementDto } from "../dtos/get-enagement-dto";
 import { GetBlogListCategoryDto } from "../dtos/get-bloglist-by-category.dto";
 import { SearchUserApiDto } from "../dtos/search-user-api.dto";
+import { CursorBlogListDto } from "../dtos/cursor-blog-list.dto";
 
 
 export async function createBlog(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -504,7 +505,7 @@ export async function searchBlogs(req: AuthenticatedRequest, res: Response, next
                 message: "Unauthorized",
             });
         }
-        const input = SearchUserApiDto.parse(req.body);
+        const input = CursorBlogListDto.parse(req.body);
 
         const result = await blogService.searchBlogs(req.user.id, input);
 

@@ -1,6 +1,6 @@
 import { z } from "zod";
 export const GetBlogListCategoryDto = z.object({
-    page: z.coerce.number(),
+    cursor: z.string().optional(),
     size: z.coerce.number(),
     categoryId: z.string().optional(),
 });
