@@ -26,6 +26,7 @@
     "typescript": "^6.0.3"
   },
   "dependencies": {
+    "@cacheable/node-cache": "^3.1.1",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@types/multer": "^2.1.0",

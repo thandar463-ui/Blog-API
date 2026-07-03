@@ -14,6 +14,9 @@ import { connect } from "node:http2";
 import { sendMail } from "./mail.service";
 import { SearchUserApiInput } from "../dtos/search-user-api.dto";
 import { CursorBlogListInput } from "../dtos/cursor-blog-list.dto";
+import { Cache } from "../lib/cache";
+
+const cache = Cache.getInstance();
 
 export async function createBlog(authorId: string, input: CreateBlogApiInput, coverImage?: string) {
 
@@ -265,6 +268,9 @@ export async function updateBlog(blogId: string, authorId: string, input: Update
             }),
         },
     });
+
+    const cacheKey = `blogs: detail: ${blogId}`;
+    cache.del(cacheKey);
     return updatedBlog;
 }
 
@@ -294,10 +300,18 @@ export async function deleteBlog(blogId: string, authorId: string) {
         },
     });
 
+    const cacheKey = `blogs:detail:${blogId}`;
+    cache.del(cacheKey);
     return deletedBlog;
 }
 
 export async function getBlogDetail(blogId: string) {
+
+    const cacheKey = `blogs: detail: ${blogId}`;
+    const cacheBlog = cache.get<any>(cacheKey);
+    if (cacheBlog) {
+        return cacheBlog;
+    }
 
     const blog = await prisma.blog.findFirst({
         where: {
@@ -330,10 +344,14 @@ export async function getBlogDetail(blogId: string) {
         throw new ApiError("Blog not found", 404);
     }
 
-    return {
+    const formattedBlog = {
         ...blog,
         likeCount: blog._count.likes,
     };
+
+    cache.set(cacheKey, formattedBlog, 1 * 60 * 60 * 24);
+
+    return formattedBlog;
 }
 
 export async function saveBlog(userId: string, blogId: string) {
@@ -621,6 +639,14 @@ export async function createReply(userId: string, input: CreateReplyApiInput) {
 
 export async function commentList(blogId: string, input: BlogListInput) {
 
+    const cacheKey = `blogs:comments:${blogId}:page:${input.page}:size:${input.size}`;
+
+
+    const cachedComments = cache.get<any>(cacheKey);
+    if (cachedComments) {
+        return cachedComments;
+    }
+
     const blog = await prisma.blog.findFirst({
         where: {
             id: blogId,
@@ -671,7 +697,7 @@ export async function commentList(blogId: string, input: BlogListInput) {
         }),
     ]);
 
-    return {
+    const result = {
         comments: comments.map((comment) => ({
             id: comment.id,
             content: comment.content,
@@ -693,9 +719,22 @@ export async function commentList(blogId: string, input: BlogListInput) {
             totalPages: Math.ceil(total / input.size),
         },
     };
+
+    cache.set(cacheKey, result, 1 * 60 * 60 * 24);
+
+    return result;
+
 }
 
 export async function replyList(blogId: string, commentId: string, input: BlogListInput) {
+
+    const cacheKey = `blogs:comments:${blogId}:page:${input.page}:size:${input.size}`;
+
+
+    const cachedComments = cache.get<any>(cacheKey);
+    if (cachedComments) {
+        return cachedComments;
+    }
 
     const comment = await prisma.comment.findFirst({
         where: {
@@ -748,7 +787,7 @@ export async function replyList(blogId: string, commentId: string, input: BlogLi
         }),
     ]);
 
-    return {
+    const result = {
         replies: replies.map((reply) => ({
             id: reply.id,
             content: reply.content,
@@ -769,6 +808,10 @@ export async function replyList(blogId: string, commentId: string, input: BlogLi
         },
 
     };
+
+    cache.set(cacheKey, result, 1 * 60 * 60 * 24);
+
+    return result;
 }
 
 export async function viewBlog(blogId: string, userId: string) {
@@ -816,6 +859,13 @@ export async function viewBlog(blogId: string, userId: string) {
 
 export async function ownBlogList(authorId: string, input: BlogListInput) {
 
+    const cacheKey = `user: blogs: ${authorId}: page: ${input.page}: size: ${input.size}`;
+
+    const cachedBlog = cache.get<any>(cacheKey);
+    if (cachedBlog) {
+        return cachedBlog;
+    }
+
     const skip = (input.page - 1) * input.size;
 
     const [blogs, total] = await Promise.all([
@@ -857,7 +907,7 @@ export async function ownBlogList(authorId: string, input: BlogListInput) {
 
     ]);
 
-    return {
+    const result = {
         blogs: blogs.map((blog) => ({
             ...blog,
             likeCount: blog._count.likes,
@@ -869,6 +919,10 @@ export async function ownBlogList(authorId: string, input: BlogListInput) {
             totalPages: Math.ceil(total / input.size),
         },
     };
+
+    cache.set(cacheKey, result, 1 * 60 * 60 * 24);
+
+    return result;
 }
 
 
