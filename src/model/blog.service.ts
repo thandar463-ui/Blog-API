@@ -14,6 +14,7 @@ import { connect } from "node:http2";
 import { sendMail } from "./mail.service";
 import { SearchUserApiInput } from "../dtos/search-user-api.dto";
 import { CursorBlogListInput } from "../dtos/cursor-blog-list.dto";
+import { CreateReportInput } from "../dtos/create-report.dto";
 import { Cache } from "../lib/cache";
 
 const cache = Cache.getInstance();
@@ -1306,4 +1307,81 @@ export async function searchBlogs(currentUserId: string, input: CursorBlogListIn
             hasNextPage: !!nextCursor,
         },
     };
+}
+
+export async function createReport(blogId: string, userId: string, input: CreateReportInput,) {
+
+    const blog = await prisma.blog.findFirst({
+        where: {
+            id: blogId,
+            deletedAt: null,
+            status: "PUBLISHED",
+        },
+    });
+
+    if (!blog) {
+        throw new ApiError("Blog not found", 404);
+    }
+
+    if (blog.authorId === userId) {
+        throw new ApiError("You cannot report your own blog.", 400);
+    }
+
+    const category = await prisma.reportCategory.findUnique({
+        where: {
+            id: input.reportCategoryId,
+        },
+    });
+
+    if (!category) {
+        throw new ApiError("Report category not found", 404);
+    }
+
+
+    let report = await prisma.report.findUnique({
+        where: { blogId },
+    });
+
+    if (!report) {
+        report = await prisma.report.create({
+            data: {
+                blogId,
+                status: "PENDING",
+            },
+        });
+    }
+
+    const alreadyReported = await prisma.reportInfo.findUnique({
+        where: {
+            reportId_userId_reportCategoryId: {
+                reportId: report.id,
+                userId,
+                reportCategoryId: input.reportCategoryId,
+            },
+        },
+    });
+
+    if (alreadyReported) {
+        throw new ApiError("You have already submitted a report under this category for this blog.", 400);
+    }
+
+
+    const reportInfo = await prisma.reportInfo.create({
+        data: {
+            reportId: report.id,
+            userId,
+            reportCategoryId: input.reportCategoryId,
+            reason: input.reason,
+        },
+        include: {
+            reportCategory: {
+                select: { name: true },
+            },
+            report: {
+                select: { status: true },
+            },
+        },
+    });
+
+    return reportInfo;
 }

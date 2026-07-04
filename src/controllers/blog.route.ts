@@ -46,4 +46,6 @@ router.post("/categorieslist", blogController.getBlogCategoryList);
 
 router.post("/search", authMiddleware, blogController.searchBlogs);
 
+router.post("/:id/report", authMiddleware, blogController.createReport);
+
 export { router as blogRoutes };

@@ -49,7 +49,8 @@ app.listen(PORT, () => {
 //       data: {
 //         firstName: "Rain",
 //         lastName: "June",
-//         email: "rain@gmail.com",
+//         email: "rain@gmail.c
+// om",
 //         password: "rain123",
 //       }
 //     });

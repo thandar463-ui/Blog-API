@@ -32,3 +32,32 @@ export async function getCategoryList() {
     }
 
 }
+
+
+export async function getReportCategoryList() {
+    const cacheKey = "global:report_categories";
+
+    const cachedReportCategories = cache.get<any>(cacheKey);
+    if (cachedReportCategories) {
+        return cachedReportCategories;
+    }
+
+    try {
+
+        const reportCategories = await prisma.reportCategory.findMany({
+            select: {
+                id: true,
+                name: true,
+            },
+            orderBy: {
+                name: 'asc',
+            },
+        });
+        cache.set(cacheKey, reportCategories, 1 * 60 * 60 * 24 * 7);
+
+        return reportCategories;
+
+    } catch (error) {
+        throw new ApiError("Failed to fetch report categories", 500);
+    }
+}

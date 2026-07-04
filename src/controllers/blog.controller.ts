@@ -12,6 +12,7 @@ import { GetEnagementDto } from "../dtos/get-enagement-dto";
 import { GetBlogListCategoryDto } from "../dtos/get-bloglist-by-category.dto";
 import { SearchUserApiDto } from "../dtos/search-user-api.dto";
 import { CursorBlogListDto } from "../dtos/cursor-blog-list.dto";
+import { CreateReportDto } from "../dtos/create-report.dto";
 
 
 export async function createBlog(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -516,4 +517,28 @@ export async function searchBlogs(req: AuthenticatedRequest, res: Response, next
     } catch (err) {
         handleErrors(res, err);
     }
+}
+
+
+export async function createReport(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+
+    if (!req.user) {
+        return res.status(401).json({ message: "Unauthorized", });
+    }
+
+    const userId = req.user?.id;
+
+    const blogId = req.params.id;
+
+    if (!blogId) {
+        return res.status(400).json({ message: "Blog id is required", });
+    }
+    const input = CreateReportDto.parse(req.body);
+
+    const result = await blogService.createReport(blogId as string, userId, input);
+
+    res.json({
+        message: "Report submitted successfully",
+        data: result,
+    });
 }

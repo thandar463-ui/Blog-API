@@ -9,5 +9,7 @@ const router = Router();
 
 
 router.get("/list", categoryController.getCategoryList);
+router.get("/report", categoryController.getReportCategoryList);
+
 
 export { router as categoryRoutes };
