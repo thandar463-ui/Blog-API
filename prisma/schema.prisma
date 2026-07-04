@@ -32,6 +32,7 @@ model User {
 
   following Follow[] @relation("UserFollowing")
   followers Follow[] @relation("UserFollowers")
+  reposts   Repost[]
 
   @@unique([firstName, lastName, id])
 }
@@ -64,6 +65,7 @@ model Blog {
   comments    Comment[]
   views       View[]
   categories  Category[]
+  reposts     Repost[]
 
   @@unique([createdAt, id])
   @@index([authorId])
@@ -171,4 +173,18 @@ model View {
   viewedAt DateTime
 
   @@unique([blogId, viewedAt, userId])
+}
+
+model Repost {
+  id String @id @default(cuid())
+
+  userId String
+  blogId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  blog Blog @relation(fields: [blogId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, blogId])
 }
