@@ -12,6 +12,12 @@ enum BlogStatus {
   PUBLISHED
 }
 
+enum ReportStatus {
+  PENDING
+  ACTION_TAKEN
+  DISMISSED
+}
+
 model User {
   id        String @id @default(cuid())
   firstName String
@@ -30,9 +36,10 @@ model User {
   replies    Reply[]
   views      View[]
 
-  following Follow[] @relation("UserFollowing")
-  followers Follow[] @relation("UserFollowers")
-  reposts   Repost[]
+  following   Follow[]     @relation("UserFollowing")
+  followers   Follow[]     @relation("UserFollowers")
+  reports     Report[]
+  reportInfos ReportInfo[]
 
   @@unique([firstName, lastName, id])
 }
@@ -65,7 +72,7 @@ model Blog {
   comments    Comment[]
   views       View[]
   categories  Category[]
-  reposts     Repost[]
+  report      Report?
 
   @@unique([createdAt, id])
   @@index([authorId])
@@ -175,16 +182,44 @@ model View {
   @@unique([blogId, viewedAt, userId])
 }
 
-model Repost {
+model Report {
   id String @id @default(cuid())
 
-  userId String
-  blogId String
+  status ReportStatus @default(PENDING)
+  blogId String       @unique
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   blog Blog @relation(fields: [blogId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@unique([userId, blogId])
+  user        User?        @relation(fields: [userId], references: [id])
+  userId      String?
+  reportInfos ReportInfo[]
+}
+
+model ReportCategory {
+  id   String @id @default(cuid())
+  name String @unique
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  reportInfos ReportInfo[]
+}
+
+model ReportInfo {
+  id               String @id @default(cuid())
+  reportId         String
+  userId           String
+  reportCategoryId String
+
+  report         Report         @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reportCategory ReportCategory @relation(fields: [reportCategoryId], references: [id], onDelete: Cascade)
+
+  reason String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([reportId, userId, reportCategoryId])
 }
