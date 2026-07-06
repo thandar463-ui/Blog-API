@@ -16,6 +16,8 @@ import { SearchUserApiInput } from "../dtos/search-user-api.dto";
 import { CursorBlogListInput } from "../dtos/cursor-blog-list.dto";
 import { CreateReportInput } from "../dtos/create-report.dto";
 import { Cache } from "../lib/cache";
+import { ReportListInput } from "../dtos/report-list.dto";
+import { ReportInfoListInput } from "../dtos/reportInfo-list.dto";
 
 const cache = Cache.getInstance();
 
@@ -1384,4 +1386,158 @@ export async function createReport(blogId: string, userId: string, input: Create
     });
 
     return reportInfo;
+}
+
+export async function getReportList(input: ReportListInput) {
+
+    const skip = (input.page - 1) * input.size;
+
+    const where: Prisma.ReportWhereInput = {};
+
+    if (input.status !== null) {
+        where.status = input.status;
+    }
+
+    if (input.startDate || input.endDate) {
+        where.createdAt = {};
+
+
+        if (input.startDate) {
+            where.createdAt.gte = input.startDate;
+        }
+
+        if (input.endDate) {
+            where.createdAt.lte = input.endDate;
+        }
+
+    }
+
+    const [reports, total] = await Promise.all([
+        prisma.report.findMany({
+            where,
+            skip,
+            take: input.size,
+
+            include: {
+                blog: {
+                    select: {
+                        id: true,
+                        title: true,
+                    },
+                },
+
+                _count: {
+                    select: {
+                        reportInfos: true,
+                    },
+                },
+            },
+
+            orderBy: {
+                createdAt: "desc",
+            },
+        }),
+
+        prisma.report.count({
+            where,
+        }),
+    ]);
+
+
+    return {
+        reports: reports.map((report) => ({
+            id: report.id,
+            status: report.status,
+            createdAt: report.createdAt,
+
+
+            reportcount: report._count.reportInfos,
+        })),
+
+        pagination: {
+            page: input.page,
+            size: input.size,
+            total,
+            totalPages: Math.ceil(total / input.size),
+        },
+    };
+
+}
+
+export async function getReportInfoList(reportId: string, input: ReportInfoListInput) {
+    const report = await prisma.report.findUnique({
+        where: {
+            id: reportId,
+        }
+    });
+
+    if (!report) {
+        throw new ApiError("Report not found", 404);
+    }
+
+    const skip = (input.page - 1) * input.size;
+
+    const where: Prisma.ReportInfoWhereInput = {
+        reportId,
+    };
+
+    if (input.categoryId) {
+        where.reportCategoryId = input.categoryId;
+    }
+
+    if (input.startDate || input.endDate) {
+        where.createdAt = {};
+
+        if (input.startDate) {
+            where.createdAt.gte = input.startDate;
+        }
+
+        if (input.endDate) {
+            where.createdAt.lte = input.endDate;
+        }
+    }
+
+    const [reportInfos, total] = await Promise.all([
+        prisma.reportInfo.findMany({
+            where,
+            skip,
+            take: input.size,
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        email: true,
+                    },
+                },
+
+                reportCategory: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                },
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
+        }),
+
+        prisma.reportInfo.count({
+            where,
+        }),
+    ]);
+
+    return {
+        reportInfos,
+
+        pagination: {
+            page: input.page,
+            size: input.size,
+            total,
+            totalPages: Math.ceil(total / input.size),
+        },
+    };
+
 }

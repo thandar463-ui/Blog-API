@@ -13,6 +13,8 @@ import { GetBlogListCategoryDto } from "../dtos/get-bloglist-by-category.dto";
 import { SearchUserApiDto } from "../dtos/search-user-api.dto";
 import { CursorBlogListDto } from "../dtos/cursor-blog-list.dto";
 import { CreateReportDto } from "../dtos/create-report.dto";
+import { ReportListDto } from "../dtos/report-list.dto";
+import { ReportInfoListDto } from "../dtos/reportInfo-list.dto";
 
 
 export async function createBlog(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -521,24 +523,66 @@ export async function searchBlogs(req: AuthenticatedRequest, res: Response, next
 
 
 export async function createReport(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized", });
+        }
 
-    if (!req.user) {
-        return res.status(401).json({ message: "Unauthorized", });
+        const userId = req.user?.id;
+
+        const blogId = req.params.id;
+
+        if (!blogId) {
+            return res.status(400).json({ message: "Blog id is required", });
+        }
+        const input = CreateReportDto.parse(req.body);
+
+        const result = await blogService.createReport(blogId as string, userId, input);
+
+        return res.status(200).json({
+            message: "Report submitted successfully",
+            data: result,
+        });
+    } catch (err) {
+        handleErrors(res, err);
     }
 
-    const userId = req.user?.id;
+}
 
-    const blogId = req.params.id;
+export async function ReportList(req: AuthenticatedRequest, res: Response) {
+    try {
+        const input = ReportListDto.parse(req.body);
 
-    if (!blogId) {
-        return res.status(400).json({ message: "Blog id is required", });
+        const report = await blogService.getReportList(input);
+
+        return res.status(200).json({
+            message: "Report list fetched successfully",
+            data: report,
+        });
+    } catch (err) {
+        handleErrors(res, err);
     }
-    const input = CreateReportDto.parse(req.body);
+}
 
-    const result = await blogService.createReport(blogId as string, userId, input);
+export async function getReportInfoList(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
 
-    res.json({
-        message: "Report submitted successfully",
-        data: result,
-    });
+
+        const reportId = req.params.id;
+
+        if (!reportId) {
+            return res.status(400).json({ message: "Report id is required", });
+        }
+        const input = ReportInfoListDto.parse(req.body);
+
+        const result = await blogService.getReportInfoList(reportId as string, input);
+
+        return res.status(200).json({
+            message: "Reportinfo list fetched successfully",
+            data: result,
+        });
+    } catch (err) {
+        handleErrors(res, err);
+    }
+
 }

@@ -48,4 +48,8 @@ router.post("/search", authMiddleware, blogController.searchBlogs);
 
 router.post("/:id/report", authMiddleware, blogController.createReport);
 
+router.post("/reports", blogController.ReportList);
+
+router.get("/reports/:id/report-infos", blogController.getReportInfoList);
+
 export { router as blogRoutes };
