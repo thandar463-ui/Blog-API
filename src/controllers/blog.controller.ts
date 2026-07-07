@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
+import { AdminAuthenticatedRequest } from "../middlewares/admin.middleware";
+
 import { CreateBlogApiDto } from "../dtos/create-blog-api.dto";
 import { BlogListDto } from "../dtos/blog-list.dto";
 import { UpdateBlogDto } from "../dtos/update-blog.dto";
@@ -549,14 +551,20 @@ export async function createReport(req: AuthenticatedRequest, res: Response, nex
 
 }
 
-export async function ReportList(req: AuthenticatedRequest, res: Response) {
+export async function ReportList(req: AdminAuthenticatedRequest, res: Response) {
     try {
+
+        if (!req.admin) {
+            return res.status(401).json({ message: "Unauthorized", });
+        }
+        const adminId = req.admin?.id;
         const input = ReportListDto.parse(req.body);
 
-        const report = await blogService.getReportList(input);
+        const report = await blogService.getReportList(adminId, input);
 
         return res.status(200).json({
             message: "Report list fetched successfully",
+            adminId,
             data: report,
         });
     } catch (err) {
@@ -564,10 +572,13 @@ export async function ReportList(req: AuthenticatedRequest, res: Response) {
     }
 }
 
-export async function getReportInfoList(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+export async function getReportInfoList(req: AdminAuthenticatedRequest, res: Response, next: NextFunction) {
     try {
 
-
+        if (!req.admin) {
+            return res.status(401).json({ message: "Unauthorized", });
+        }
+        const adminId = req.admin?.id;
         const reportId = req.params.id;
 
         if (!reportId) {
@@ -575,10 +586,11 @@ export async function getReportInfoList(req: AuthenticatedRequest, res: Response
         }
         const input = ReportInfoListDto.parse(req.body);
 
-        const result = await blogService.getReportInfoList(reportId as string, input);
+        const result = await blogService.getReportInfoList(adminId, reportId as string, input);
 
         return res.status(200).json({
             message: "Reportinfo list fetched successfully",
+            adminId,
             data: result,
         });
     } catch (err) {

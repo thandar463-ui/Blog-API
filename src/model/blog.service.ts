@@ -1388,7 +1388,17 @@ export async function createReport(blogId: string, userId: string, input: Create
     return reportInfo;
 }
 
-export async function getReportList(input: ReportListInput) {
+export async function getReportList(adminId: string, input: ReportListInput) {
+
+    const existing = await prisma.admin.findUnique({
+        where: {
+            id: adminId,
+        },
+    });
+
+    if (!existing) {
+        throw new ApiError("Admin not found", 404);
+    }
 
     const skip = (input.page - 1) * input.size;
 
@@ -1419,6 +1429,7 @@ export async function getReportList(input: ReportListInput) {
             take: input.size,
 
             include: {
+
                 blog: {
                     select: {
                         id: true,
@@ -1464,7 +1475,18 @@ export async function getReportList(input: ReportListInput) {
 
 }
 
-export async function getReportInfoList(reportId: string, input: ReportInfoListInput) {
+export async function getReportInfoList(adminId: string, reportId: string, input: ReportInfoListInput) {
+
+    const existing = await prisma.admin.findUnique({
+        where: {
+            id: adminId,
+        },
+    });
+
+    if (!existing) {
+        throw new ApiError("Admin not found", 404);
+    }
+
     const report = await prisma.report.findUnique({
         where: {
             id: reportId,

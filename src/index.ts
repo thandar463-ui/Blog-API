@@ -5,10 +5,12 @@ import fs from "fs";
 import dotenv from "dotenv";
 import { blogRoutes } from "./controllers/blog.route";
 import { categoryRoutes } from "./controllers/category.route";
+import { adminRoutes } from "./controllers/admin.route";
 
 import { requestId } from "./middlewares/requestId.middleware";
 import { requestLogger } from "./middlewares/request-logger.middleware";
 import { errorHandler } from "./middlewares/errorHandler.middleware";
+import * as adminService from "./model/admin.service";
 
 dotenv.config();
 
@@ -25,6 +27,7 @@ app.use(requestLogger);
 
 
 
+app.use("/admin", adminRoutes);
 
 
 app.use("/users", userRoutes);
@@ -35,12 +38,19 @@ app.use("/categories", categoryRoutes);
 
 app.use("/uploads", express.static("uploads"));
 
+async function startServer() {
+  await adminService.seedAdmin();
+
+}
+startServer();
+
 
 
 app.listen(PORT, () => {
   console.log(`✅ Express server running at http://localhost:${PORT}`);
 
 });
+
 
 // async function main() {
 //   try {

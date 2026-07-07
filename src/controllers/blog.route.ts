@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as blogController from "./blog.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
+import { adminMiddleware } from "../middlewares/admin.middleware";
 import { upload } from "../middlewares/upload.middleware";
 
 
@@ -48,8 +49,8 @@ router.post("/search", authMiddleware, blogController.searchBlogs);
 
 router.post("/:id/report", authMiddleware, blogController.createReport);
 
-router.post("/reports", blogController.ReportList);
+router.post("/reports", adminMiddleware, blogController.ReportList);
 
-router.get("/reports/:id/report-infos", blogController.getReportInfoList);
+router.get("/reports/:id/report-infos", adminMiddleware, blogController.getReportInfoList);
 
 export { router as blogRoutes };
