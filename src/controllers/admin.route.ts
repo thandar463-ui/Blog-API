@@ -11,4 +11,6 @@ router.patch("/reports/:id/delete-blog", adminMiddleware, adminController.delete
 
 router.patch("/reports/:id/dismiss", adminMiddleware, adminController.dismissReport);
 
+router.get("/users/:id", adminMiddleware, adminController.getUserDetail);
+
 export { router as adminRoutes };

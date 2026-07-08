@@ -27,10 +27,6 @@ export async function login(req: Request, res: Response, next: NextFunction) {
 export async function deleteReport(req: AdminAuthenticatedRequest, res: Response, next: NextFunction) {
     try {
 
-        if (!req.admin) {
-            return res.status(401).json({ message: "Unauthorized", });
-        }
-        const adminId = req.admin?.id;
         const reportId = req.params.id;
 
         if (!reportId) {
@@ -38,11 +34,10 @@ export async function deleteReport(req: AdminAuthenticatedRequest, res: Response
         }
        
 
-        const result = await adminService.deleteReport(adminId, reportId as string);
+        const result = await adminService.deleteReport(reportId as string);
 
         return res.status(200).json({
             message: "Admin deleted report blog successfully",
-            adminId,
             data: result,
         });
     } catch (err) {
@@ -54,10 +49,6 @@ export async function deleteReport(req: AdminAuthenticatedRequest, res: Response
 export async function dismissReport(req: AdminAuthenticatedRequest, res: Response, next: NextFunction) {
     try {
 
-        if (!req.admin) {
-            return res.status(401).json({ message: "Unauthorized", });
-        }
-        const adminId = req.admin?.id;
         const reportId = req.params.id;
 
         if (!reportId) {
@@ -65,11 +56,32 @@ export async function dismissReport(req: AdminAuthenticatedRequest, res: Respons
         }
        
 
-        const result = await adminService.dismissReport(adminId, reportId as string);
+        const result = await adminService.dismissReport(reportId as string);
 
         return res.status(200).json({
             message: "Admin dismissed report  successfully",
-            adminId,
+            data: result,
+        });
+    } catch (err) {
+        handleErrors(res, err);
+    }
+
+}
+
+export async function getUserDetail(req: AdminAuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+
+        const userId = req.params.id;
+
+        if (!userId) {
+            return res.status(400).json({ message: "User id is required", });
+        }
+       
+
+        const result = await adminService.getUserDetail(userId as string);
+
+        return res.status(200).json({
+            message: "Admin fetched user lists  successfully",
             data: result,
         });
     } catch (err) {

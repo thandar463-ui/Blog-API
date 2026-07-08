@@ -5,6 +5,9 @@ import { ApiError } from "../controllers/api-error";
 import { LoginInput } from "../dtos/login.dto";
 import { signAccessToken } from "../model/jwt";
 import { JwtPayload } from "jsonwebtoken";
+import { Cache } from "../lib/cache";
+
+const cache = Cache.getInstance();
 
 export async function seedAdmin() {
     const existingAdmin = await prisma.admin.findUnique({
@@ -73,7 +76,7 @@ export async function login(input: LoginInput) {
 
 }
 
-export async function deleteReport(adminId: string, reportId: string){
+export async function deleteReport(reportId: string){
     const report = await prisma.report.findUnique({
         where: {
             id: reportId,
@@ -110,7 +113,7 @@ export async function deleteReport(adminId: string, reportId: string){
     return reports;
 }
 
-export async function dismissReport(adminId: string, reportId: string){
+export async function dismissReport(reportId: string){
     const report = await prisma.report.findUnique({
         where: {
             id: reportId,
@@ -135,4 +138,56 @@ export async function dismissReport(adminId: string, reportId: string){
     });
 
     return reports;
+}
+
+export async function getUserDetail(userId: string) {
+
+    const cacheKey = `userss: detail: ${userId}`;
+    const cacheBlog = cache.get<any>(cacheKey);
+    if (cacheBlog) {
+        return cacheBlog;
+    }
+
+    const user = await prisma.user.findUnique({
+        where: {
+            id: userId,
+        },
+
+        select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        createdAt: true,
+
+        _count: {
+            select: {
+                blogs: {
+                    where: {
+                        status: "PUBLISHED",
+                        deletedAt: null,
+                    },
+                },
+            },
+        },
+    },
+
+    });
+
+    if(!user) {
+        throw new ApiError("User not found", 404);
+    }
+
+    const users = {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        createdAt: user.createdAt,
+        publishedBlogCount: user._count.blogs,
+    };
+    
+    cache.set(cacheKey, users, 1 * 60 * 60 * 24);
+
+    return users;
 }

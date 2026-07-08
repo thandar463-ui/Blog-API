@@ -220,12 +220,15 @@ export async function searchUser(currentUserId: string, input: SearchUserApiInpu
     let nextCursor: { firstName: string; lastName: string; id: string } | null = null;
 
     if (users.length > input.size) {
-        const nextItem = users.pop();
-        nextCursor = {
-            firstName: nextItem!.firstName,
-            lastName: nextItem!.lastName,
-            id: nextItem!.id,
-        };
+       users.pop();
+           const lastItem = users[users.length - 1];
+        if (lastItem) {
+            nextCursor = {
+                id: lastItem.id,
+                firstName: lastItem.firstName,
+                lastName: lastItem.lastName,
+            };
+        }
     }
 
     return {
@@ -610,4 +613,46 @@ export async function suggestionList(currentUserId: string, input: BlogListInput
             totalPages: Math.ceil(total / input.size),
         },
     };
+}
+
+export async function getUserDetail(userId: string) {
+    const user = await prisma.user.findUnique({
+        where: {
+            id: userId,
+        },
+
+        select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        createdAt: true,
+
+        _count: {
+            select: {
+                blogs: {
+                    where: {
+                        status: "PUBLISHED",
+                        deletedAt: null,
+                    },
+                },
+            },
+        },
+    },
+
+    });
+
+    if(!user) {
+        throw new ApiError("User not found", 404);
+    }
+
+    return {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        createdAt: user.createdAt,
+        publishedBlogCount: user._count.blogs,
+    };
+    
 }
