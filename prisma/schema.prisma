@@ -18,6 +18,12 @@ enum ReportStatus {
   DISMISSED
 }
 
+enum NotificationType {
+  LIKE
+  COMMENT
+  FOLLOW
+}
+
 model Admin {
   id        String   @id @default(cuid())
   name      String
@@ -48,7 +54,9 @@ model User {
   following Follow[] @relation("UserFollowing")
   followers Follow[] @relation("UserFollowers")
 
-  reportInfos ReportInfo[]
+  reportInfos           ReportInfo[]
+  sentNotifications     Notification[] @relation("NotificationSender")
+  receivedNotifications Notification[] @relation("NotificationReceiver")
 
   @@unique([firstName, lastName, id])
 }
@@ -63,25 +71,26 @@ model Category {
 }
 
 model Blog {
-  id          String      @id @default(cuid())
-  authorId    String
-  author      User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  title       String
-  slug        String      @unique
-  content     String      @db.Text
-  excerpt     String?
-  coverImage  String?
-  status      BlogStatus  @default(DRAFT)
-  publishedAt DateTime?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  deletedAt   DateTime?
-  savedBlogs  SavedBlog[]
-  likes       Like[]
-  comments    Comment[]
-  views       View[]
-  categories  Category[]
-  report      Report?
+  id            String         @id @default(cuid())
+  authorId      String
+  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  title         String
+  slug          String         @unique
+  content       String         @db.Text
+  excerpt       String?
+  coverImage    String?
+  status        BlogStatus     @default(DRAFT)
+  publishedAt   DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+  savedBlogs    SavedBlog[]
+  likes         Like[]
+  comments      Comment[]
+  views         View[]
+  categories    Category[]
+  report        Report?
+  notifications Notification[]
 
   @@unique([createdAt, id])
   @@index([authorId])
@@ -149,10 +158,11 @@ model Comment {
   user User @relation(fields: [userId], references: [id])
   blog Blog @relation(fields: [blogId], references: [id])
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-  replies   Reply[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+  replies       Reply[]
+  notifications Notification[]
 
   @@index([userId])
   @@index([blogId])
@@ -229,4 +239,28 @@ model ReportInfo {
   createdAt DateTime @default(now())
 
   @@unique([reportId, userId, reportCategoryId])
+}
+
+model Notification {
+  id   String           @id @default(cuid())
+  type NotificationType
+
+  receiverId String
+  receiver   User   @relation("NotificationReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  senderId String
+  sender   User   @relation("NotificationSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  blogId String?
+  blog   Blog?   @relation(fields: [blogId], references: [id], onDelete: Cascade)
+
+  commentId String?
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  isRead Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([receiverId, createdAt])
 }
