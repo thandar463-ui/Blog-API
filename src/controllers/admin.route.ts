@@ -6,6 +6,9 @@ const router = Router();
 
 
 router.post("/login", adminController.login);
-;
+
+router.patch("/reports/:id/delete-blog", adminMiddleware, adminController.deleteReport);
+
+router.patch("/reports/:id/dismiss", adminMiddleware, adminController.dismissReport);
 
 export { router as adminRoutes };

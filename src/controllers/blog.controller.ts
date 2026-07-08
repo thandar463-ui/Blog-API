@@ -598,3 +598,30 @@ export async function getReportInfoList(req: AdminAuthenticatedRequest, res: Res
     }
 
 }
+
+export async function deleteReport(req: AdminAuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+
+        if (!req.admin) {
+            return res.status(401).json({ message: "Unauthorized", });
+        }
+        const adminId = req.admin?.id;
+        const reportId = req.params.id;
+
+        if (!reportId) {
+            return res.status(400).json({ message: "Report id is required", });
+        }
+       
+
+        const result = await blogService.deleteReport(adminId, reportId as string);
+
+        return res.status(200).json({
+            message: "Admin deleted report blog successfully",
+            adminId,
+            data: result,
+        });
+    } catch (err) {
+        handleErrors(res, err);
+    }
+
+}

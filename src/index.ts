@@ -1,12 +1,9 @@
 import express from "express";
 import { userRoutes } from "./controllers/user.route";
-import fs from "fs";
-// import { prisma } from "./lib/prisma";
 import dotenv from "dotenv";
 import { blogRoutes } from "./controllers/blog.route";
 import { categoryRoutes } from "./controllers/category.route";
 import { adminRoutes } from "./controllers/admin.route";
-
 import { requestId } from "./middlewares/requestId.middleware";
 import { requestLogger } from "./middlewares/request-logger.middleware";
 import { errorHandler } from "./middlewares/errorHandler.middleware";

@@ -1390,16 +1390,7 @@ export async function createReport(blogId: string, userId: string, input: Create
 
 export async function getReportList(adminId: string, input: ReportListInput) {
 
-    const existing = await prisma.admin.findUnique({
-        where: {
-            id: adminId,
-        },
-    });
-
-    if (!existing) {
-        throw new ApiError("Admin not found", 404);
-    }
-
+    
     const skip = (input.page - 1) * input.size;
 
     const where: Prisma.ReportWhereInput = {};
@@ -1477,15 +1468,6 @@ export async function getReportList(adminId: string, input: ReportListInput) {
 
 export async function getReportInfoList(adminId: string, reportId: string, input: ReportInfoListInput) {
 
-    const existing = await prisma.admin.findUnique({
-        where: {
-            id: adminId,
-        },
-    });
-
-    if (!existing) {
-        throw new ApiError("Admin not found", 404);
-    }
 
     const report = await prisma.report.findUnique({
         where: {
@@ -1562,4 +1544,37 @@ export async function getReportInfoList(adminId: string, reportId: string, input
         },
     };
 
+}
+
+export async function deleteReport(adminId: string, reportId: string){
+    const report = await prisma.report.findUnique({
+        where: {
+            id: reportId,
+        },
+    });
+
+    if(!report) {
+        throw new ApiError("Report not found", 404);
+    }
+
+    const blog = await prisma.blog.update({
+        where: {
+            id: report.blogId,
+        },
+        data: {
+            deletedAt: new Date(),
+        },
+    });
+
+
+    const reports = await prisma.report.update({
+        where: {
+            id: reportId,
+        },
+        data: {
+            status: "ACTION_TAKEN",
+        },
+    });
+
+    return reports;
 }

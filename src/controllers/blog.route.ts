@@ -53,4 +53,6 @@ router.post("/reports", adminMiddleware, blogController.ReportList);
 
 router.get("/reports/:id/report-infos", adminMiddleware, blogController.getReportInfoList);
 
+
+
 export { router as blogRoutes };
