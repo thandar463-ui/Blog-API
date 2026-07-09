@@ -491,7 +491,7 @@ export async function getSavedBlog(userId: string, input: BlogListInput) {
     };
 }
 
-export async function likeBlog(userId: string, blogId: string): Promise<Like> {
+export async function likeBlog(senderId: string, blogId: string): Promise<Like> {
 
     const blog = await prisma.blog.findFirst({
         where: {
@@ -500,6 +500,7 @@ export async function likeBlog(userId: string, blogId: string): Promise<Like> {
             deletedAt: null,
 
         },
+
     });
     if (!blog) {
         throw new ApiError("Blog not found", 404);
@@ -516,7 +517,7 @@ export async function likeBlog(userId: string, blogId: string): Promise<Like> {
     const existing = await prisma.like.findUnique({
         where: {
             userId_blogId: {
-                userId: userId,
+                userId: senderId,
                 blogId: blogId,
             },
         },
@@ -528,11 +529,22 @@ export async function likeBlog(userId: string, blogId: string): Promise<Like> {
 
     const likedBlog = await prisma.like.create({
         data: {
-            userId,
-            blogId
+            userId: senderId,
+            blogId: blogId,
         },
 
     });
+
+    if (blog.authorId !== senderId) {
+        await prisma.notification.create({
+            data: {
+                type: "LIKE",
+                senderId: senderId,
+                receiverId: blog.authorId,
+                entityId: blog.id,
+            },
+        });
+    }
 
     return likedBlog;
 }
@@ -1390,7 +1402,7 @@ export async function createReport(blogId: string, userId: string, input: Create
 
 export async function getReportList(adminId: string, input: ReportListInput) {
 
-    
+
     const skip = (input.page - 1) * input.size;
 
     const where: Prisma.ReportWhereInput = {};
@@ -1546,35 +1558,3 @@ export async function getReportInfoList(adminId: string, reportId: string, input
 
 }
 
-export async function deleteReport(adminId: string, reportId: string){
-    const report = await prisma.report.findUnique({
-        where: {
-            id: reportId,
-        },
-    });
-
-    if(!report) {
-        throw new ApiError("Report not found", 404);
-    }
-
-    const blog = await prisma.blog.update({
-        where: {
-            id: report.blogId,
-        },
-        data: {
-            deletedAt: new Date(),
-        },
-    });
-
-
-    const reports = await prisma.report.update({
-        where: {
-            id: reportId,
-        },
-        data: {
-            status: "ACTION_TAKEN",
-        },
-    });
-
-    return reports;
-}
