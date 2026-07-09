@@ -538,9 +538,10 @@ export async function likeBlog(senderId: string, blogId: string): Promise<Like> 
     if (blog.authorId !== senderId) {
         await prisma.notification.create({
             data: {
-                type: "LIKE",
+
                 senderId: senderId,
                 receiverId: blog.authorId,
+                type: "LIKE",
                 entityId: blog.id,
             },
         });
@@ -611,25 +612,46 @@ export async function createComment(userId: string, input: CreateCommentApiInput
         },
     });
 
+    if (blog.authorId !== userId) {
+        await prisma.notification.create({
+            data: {
+                senderId: userId,
+                receiverId: blog.authorId,
+                type: "COMMENT",
+                entityId: input.blogId,
+
+            },
+        });
+    }
+
     return comment;
 }
 
 export async function createReply(userId: string, input: CreateReplyApiInput) {
 
-    const comment = await prisma.comment.findUnique({
+    const comment = await prisma.comment.findFirst({
         where: {
             id: input.commentId,
-            deletedAt: null,
-            blog: {
-                status: "PUBLISHED",
-                deletedAt: null,
-            },
         },
+        include: {
+            blog: true,
+        },
+
     });
 
     if (!comment) {
         throw new ApiError("Comment not found", 404);
     }
+    if (comment.blog.status !== "PUBLISHED") {
+        throw new ApiError("Blog has not published", 400);
+    }
+
+    if (comment.blog.deletedAt !== null) {
+        throw new ApiError("Blog has already been deleted", 400);
+    }
+
+
+
 
     const reply = await prisma.reply.create({
         data: {
@@ -647,6 +669,23 @@ export async function createReply(userId: string, input: CreateReplyApiInput) {
             },
         },
     });
+
+
+
+    if (comment.blog.authorId !== userId) {
+        await prisma.notification.create({
+            data: {
+
+                senderId: userId,
+                receiverId: comment.blog.authorId,
+                type: "COMMENT",
+                entityId: comment.blogId,
+
+            },
+        });
+    }
+
+
 
     return reply;
 }
